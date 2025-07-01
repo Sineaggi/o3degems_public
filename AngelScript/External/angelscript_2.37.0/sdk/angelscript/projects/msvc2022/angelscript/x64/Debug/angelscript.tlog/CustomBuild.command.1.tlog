@@ -1,0 +1,2 @@
+^G:\O3DE\LSEMP3D\O3DEGEMS\ANGELSCRIPT\EXTERNAL\ANGELSCRIPT_2.37.0\SDK\ANGELSCRIPT\SOURCE\AS_CALLFUNC_X64_MSVC_ASM.ASM
+ml64.exe /c  /nologo /Fo"Debug\as_callfunc_x64_msvc_asm.obj" /W3 /Zi /Ta "G:\O3DE\lsemp3d\o3degems\AngelScript\External\angelscript_2.37.0\sdk\angelscript\source\\as_callfunc_x64_msvc_asm.asm"
