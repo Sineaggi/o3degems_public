@@ -9,8 +9,11 @@ To get this to work I did:
 cd o3de\Gems
 git submodule add https://github.com/lsemp3d/o3degems_public.git
 
+```
 cd ..
 code engine.json
+```
+to open Visual Studio Code
 
 Under external_subdirectories I added:
 
