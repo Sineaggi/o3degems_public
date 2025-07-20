@@ -48,4 +48,12 @@ It's very basic, at this point, all it does is initialize the AngelScript system
 ```
 in `o3de\Gems\o3degems_public\AngelScript\Code\Source\Clients\AngelScriptSystemComponent.cpp`
 
+Open the Angelscript project and build it for both Debug and Release configurations, in Windows this is in:
+
+```
+Gems\o3degems_public\AngelScript\External\angelscript_2.37.0\sdk\angelscript\projects\msvc2022
+```
+
+This will produce the angelscript64d.lib and angelscript64.lib files necessary for linking into O3DE.
+
 The fun work starts here! Let's get AngelScript natively supported in O3DE!
