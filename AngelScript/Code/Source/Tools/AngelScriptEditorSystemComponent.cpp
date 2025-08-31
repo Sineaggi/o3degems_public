@@ -4,6 +4,9 @@
 
 #include <AngelScript/AngelScriptTypeIds.h>
 
+#include <AngelScript/AngelScriptAsset.h>
+#include <Tools/AngelScriptAssetHandler.h>
+
 namespace AngelScript
 {
     AZ_COMPONENT_IMPL(AngelScriptEditorSystemComponent, "AngelScriptEditorSystemComponent",

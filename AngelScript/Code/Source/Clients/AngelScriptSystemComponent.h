@@ -49,6 +49,29 @@ namespace AngelScript
         // AZTickBus interface implementation
         void OnTick(float deltaTime, AZ::ScriptTimePoint time) override;
         ////////////////////////////////////////////////////////////////////////
+
+        ////////////////////////////////////////////////////////////////////////
+        // AngelScriptRequestBus::Handler interface implementation
+        asIScriptEngine* GetScriptEngine() override;
+        asIScriptContext* CreateContext() override;
+        asIScriptModule* GetModule(const AZStd::string& moduleName) override;
+        bool ExecuteString(const AZStd::string& scriptCode, const AZStd::string& moduleName) override;
+        bool RegisterGlobalFunction(const char* declaration, const void* funcPointer) override;
+        bool RegisterGlobalProperty(const char* declaration, void* propertyPtr) override;
+        ////////////////////////////////////////////////////////////////////////
+
+    private:
+        /// @brief Creates and configures the AngelScript engine instance.
+        void InitializeAngelScriptEngine();
+
+        /// @brief Shuts down and cleans up the AngelScript engine.
+        void ShutdownAngelScriptEngine();
+
+        /// @brief Creates the workspace directory for AngelScript files.
+        void CreateScriptWorkspace();
+
+        // The path to the AngelScript workspace directory.
+        AZStd::string m_scriptWorkspacePath;
     };
 
 } // namespace AngelScript

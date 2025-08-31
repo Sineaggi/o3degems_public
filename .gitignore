@@ -39,3 +39,5 @@
 
 # debug information files
 *.dwo
+
+AngelScript/External/angelscript_2.37.0/sdk/angelscript/projects

@@ -21,6 +21,10 @@ namespace AngelScript
         AngelScriptEditorSystemComponent();
         ~AngelScriptEditorSystemComponent();
 
+
+
+
+
     private:
         static void GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided);
         static void GetIncompatibleServices(AZ::ComponentDescriptor::DependencyArrayType& incompatible);
