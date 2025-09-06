@@ -4,14 +4,21 @@
 #include <AngelScript/AngelScriptTypeIds.h>
 
 #include <AzCore/IO/FileIO.h>
-
-// AngelScript Headers
-#include <angelscript.h>
-
+#include <AzCore/Asset/AssetManager.h>
+#include <AzCore/Asset/AssetManagerBus.h>
+#include <AzCore/RTTI/TypeInfoSimple.h>
 #include <AzCore/Serialization/SerializeContext.h>
 #include <AzCore/Serialization/EditContext.h>
 #include <AzCore/Serialization/EditContextConstants.inl>
 #include <AzCore/Console/ILogger.h>
+
+#include <AngelScriptAssetHandler.h>
+
+#include <AzToolsFramework/ToolsComponents/ToolsAssetCatalogBus.h>
+
+// AngelScript Headers
+#include <angelscript.h>
+
 
 namespace AngelScript
 {
@@ -20,6 +27,8 @@ namespace AngelScript
 
     void AngelScriptSystemComponent::Reflect(AZ::ReflectContext* context)
     {
+        AngelScriptAsset::Reflect(context);
+
         if (AZ::SerializeContext* serialize = azrtti_cast<AZ::SerializeContext*>(context))
         {
             serialize->Class<AngelScriptSystemComponent, AZ::Component>()
@@ -81,11 +90,50 @@ namespace AngelScript
 
     void AngelScriptSystemComponent::Activate()
     {
+        RegisterBuilder();
+
         AngelScriptRequestBus::Handler::BusConnect();
         AZ::TickBus::Handler::BusConnect();
 
         CreateScriptWorkspace();
         InitializeAngelScriptEngine();
+
+        AZ::Data::AssetCatalogRequestBus::Broadcast(&AZ::Data::AssetCatalogRequests::AddExtension, "as");
+        AZ::Data::AssetCatalogRequestBus::Broadcast(
+            &AZ::Data::AssetCatalogRequests::EnableCatalogForAsset, AZ::AzTypeInfo<AngelScriptAsset>::Uuid());
+
+
+        AZ::AssetTypeInfoBus::Handler::BusConnect(AZ::AzTypeInfo<AngelScriptAsset>::Uuid());
+    }
+
+    void AngelScriptSystemComponent::RegisterBuilder()
+    {
+        // Register ScriptCanvas Builder
+        {
+            AssetBuilderSDK::AssetBuilderDesc builderDescriptor;
+            builderDescriptor.m_name = "AngelScript Builder";
+            builderDescriptor.m_patterns.push_back(AssetBuilderSDK::AssetBuilderPattern("*.as", AssetBuilderSDK::AssetBuilderPattern::PatternType::Wildcard));
+            builderDescriptor.m_busId = AngelScriptBuilderWorker::GetUUID();
+
+            // changing the analysis fingerprint just invalidates analysis (ie, not the assets themselves)
+            // which will cause the "CreateJobs" function to be called, for each asset, even if the
+            // source file has not changed, but won't actually do the jobs unless the source file has changed
+            // or the fingerprint of the individual job is different.
+            builderDescriptor.m_analysisFingerprint = m_angelScriptBuilderWorker.GetFingerprintString();
+
+            m_angelScriptBuilderWorker.BusConnect(builderDescriptor.m_busId);
+            AssetBuilderSDK::AssetBuilderBus::Broadcast(&AssetBuilderSDK::AssetBuilderBus::Handler::RegisterBuilderInformation, builderDescriptor);
+
+            AzToolsFramework::ToolsAssetSystemBus::Broadcast(&AzToolsFramework::ToolsAssetSystemRequests::RegisterSourceAssetType, azrtti_typeid<AngelScriptAsset>(), AngelScriptAsset::GetFileFilter());
+            m_angelScriptBuilderWorker.Activate();
+
+            if (AZ::Data::AssetManager::Instance().IsReady())
+            {
+                m_angelSriptAssetHandler = AZStd::make_unique<AngelScriptAssetHandler>();
+                m_angelSriptAssetHandler->Register();
+            }
+
+        }
     }
 
     void AngelScriptSystemComponent::Deactivate()
@@ -221,11 +269,11 @@ namespace AngelScript
 
     void AngelScriptSystemComponent::InitializeAngelScriptEngine()
     {
-        AZLOG_INFO("AngelScript", "Initializing AngelScript Engine...");
+        AZLOG_INFO("Initializing AngelScript Engine...");
         m_scriptEngine = asCreateScriptEngine();
         if (!m_scriptEngine)
         {
-            AZLOG_ERROR("AngelScript", "Failed to create AngelScript engine.");
+            AZLOG_ERROR("Failed to create AngelScript engine.");
             return;
         }
 
@@ -239,17 +287,17 @@ namespace AngelScript
         // TODO: Register O3DE types and functions here.
         // For example: Registering vector types, entity manipulation functions, etc.
 
-        AZLOG_INFO("AngelScript", "AngelScript Engine Initialized.");
+        AZLOG_INFO("AngelScript Engine Initialized.");
     }
 
     void AngelScriptSystemComponent::ShutdownAngelScriptEngine()
     {
         if (m_scriptEngine)
         {
-            AZLOG_INFO("AngelScript", "Shutting down AngelScript Engine...");
+            AZLOG_INFO("Shutting down AngelScript Engine...");
             m_scriptEngine->ShutDownAndRelease();
             m_scriptEngine = nullptr;
-            AZLOG_INFO("AngelScript", "AngelScript Engine Shutdown.");
+            AZLOG_INFO("AngelScript Engine Shutdown.");
         }
     }
 
@@ -265,19 +313,58 @@ namespace AngelScript
 
             if (!AZ::IO::FileIOBase::GetInstance()->Exists(m_scriptWorkspacePath.c_str()))
             {
-                AZLOG_INFO("AngelScript", "Creating AngelScript workspace at: %s", m_scriptWorkspacePath.c_str());
+                AZLOG_INFO("Creating AngelScript workspace at: %s", m_scriptWorkspacePath.c_str());
                 AZ::IO::FileIOBase::GetInstance()->CreatePath(m_scriptWorkspacePath.c_str());
             }
             else
             {
-                AZLOG_INFO("AngelScript", "AngelScript workspace found at: %s", m_scriptWorkspacePath.c_str());
+                AZLOG_INFO("AngelScript workspace found at: %s", m_scriptWorkspacePath.c_str());
             }
         }
         else
         {
-            AZLOG_ERROR("AngelScript", "Could not resolve @user@ alias to create script workspace.");
+            AZLOG_ERROR("Could not resolve @user@ alias to create script workspace.");
         }
     }
 
+
+    // --- AssetTypeInfoBus::Handler Implementation ---
+
+    AZ::Data::AssetType AngelScriptSystemComponent::GetAssetType() const
+    {
+        return AZ::AzTypeInfo<AngelScriptAsset>::Uuid();
+    }
+
+    const char* AngelScriptSystemComponent::GetAssetTypeDisplayName() const
+    {
+        return "AngelScript File";
+    }
+
+    const char* AngelScriptSystemComponent::GetGroup() const
+    {
+        return "AngelScripts";
+    }
+
+    const char* AngelScriptSystemComponent::GetBrowserIcon() const
+    {
+        return "Editor/Icons/AssetBrowser/Script_16.png";
+    }
+
+    AZ::Uuid AngelScriptSystemComponent::GetComponentTypeId() const
+    {
+        // Return the Uuid of the AngelScriptComponent that will use this asset.
+        // This will be defined later. For now, a null Uuid is acceptable.
+        return AZ::Uuid::CreateNull();
+    }
+
+    void AngelScriptSystemComponent::GetAssetTypeExtensions(AZStd::vector<AZStd::string>& extensions)
+    {
+        extensions.push_back("as");
+    }
+
+    bool AngelScriptSystemComponent::CanCreateComponent(const AZ::Data::AssetId& /*assetId*/) const
+    {
+        return false;
+    }
 
 } // namespace AngelScript

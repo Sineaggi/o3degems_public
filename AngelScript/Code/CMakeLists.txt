@@ -43,7 +43,9 @@ ly_add_target(
     TARGET_PROPERTIES
         O3DE_PRIVATE_TARGET TRUE
     INCLUDE_DIRECTORIES
-        PRIVATE
+        PUBLIC
+            .
+            ..
             Include
             Source
     BUILD_DEPENDENCIES
@@ -51,6 +53,7 @@ ly_add_target(
             AZ::AzCore
             AZ::AzFramework
             3rdParty::AngelScript
+            AZ::AssetBuilderSDK
 )
 
 # Here add ${gem_name} target, it depends on the Private Object library and Public API interface
@@ -135,6 +138,7 @@ if(PAL_TRAIT_BUILD_HOST_TOOLS)
         BUILD_DEPENDENCIES
             PUBLIC
                 AZ::AzToolsFramework
+                AZ::AssetBuilderSDK
                 ${gem_name}.Private.Object
     )
 

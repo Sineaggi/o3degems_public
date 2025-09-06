@@ -11,6 +11,13 @@ namespace AngelScript
     public:
         AZ_RTTI(AngelScriptModule, AngelScriptModuleTypeId, AngelScriptModuleInterface);
         AZ_CLASS_ALLOCATOR(AngelScriptModule, AZ::SystemAllocator);
+
+        AngelScriptModule()
+        {
+            m_descriptors.insert(m_descriptors.end(), {
+                AngelScriptSystemComponent::CreateDescriptor()
+                });
+        }
     };
 }// namespace AngelScript
 

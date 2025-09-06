@@ -10,7 +10,7 @@ namespace AngelScript
     class AngelScriptAsset : public AZ::Data::AssetData
     {
     public:
-        AZ_RTTI(AngelScriptAsset, "{BD76A288-FAF4-44C1-A572-31877BCC504B}", AZ::Data::AssetData);
+        AZ_RTTI(AngelScriptAsset, "{D22E5C25-0F7F-4922-BE53-ABFF264B9FF5}", AZ::Data::AssetData);
         AZ_CLASS_ALLOCATOR(AngelScriptAsset, AZ::SystemAllocator, 0);
 
         AngelScriptAsset() = default;
@@ -33,6 +33,26 @@ namespace AngelScript
                     ->Field("moduleName", &AngelScriptAsset::m_moduleName);
             }
         }
+
+        static const char* GetFileFilter()
+        {
+            return "*.as";
+        }
     };
 
 } // namespace AngelScript
+
+namespace AZStd
+{
+    // hash specialization
+    template <>
+    struct hash<AZ::Data::Asset<AngelScript::AngelScriptAsset>>
+    {
+        using argument_type = AZ::Uuid;
+        using result_type = size_t;
+        size_t operator()(const AZ::Data::Asset<AngelScript::AngelScriptAsset>& asset) const
+        {
+            return asset.GetId().m_guid.GetHash();
+        }
+    };
+}

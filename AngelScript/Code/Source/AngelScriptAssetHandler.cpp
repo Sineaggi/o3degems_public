@@ -15,6 +15,8 @@
 #include <AzCore/Console/ILogger.h>
 #include <AzCore/Serialization/Utils.h>
 
+#pragma optimize("", off)
+
 namespace AngelScript
 {
 
@@ -52,6 +54,11 @@ namespace AngelScript
         {
             AZ::Data::AssetManager::Instance().UnregisterHandler(this);
         }
+    }
+
+    void AngelScriptAssetHandler::GetHandledAssetTypes(AZStd::vector<AZ::Data::AssetType>& assetTypes)
+    {
+        assetTypes.push_back(azrtti_typeid<AngelScriptAsset>());
     }
 
     AZ::Data::AssetPtr AngelScriptAssetHandler::CreateAsset(const AZ::Data::AssetId& /*id*/, const AZ::Data::AssetType& /*type*/)
@@ -168,3 +175,6 @@ namespace AngelScript
     }
 
 } // namespace AngelScript
+
+
+#pragma optimize("", on)

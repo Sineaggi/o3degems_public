@@ -2,6 +2,7 @@
 #include <AngelScript/AngelScriptTypeIds.h>
 #include <AngelScriptModuleInterface.h>
 #include "AngelScriptEditorSystemComponent.h"
+#include <Builders/AngelScriptBuilderComponent.h>
 
 namespace AngelScript
 {
@@ -20,6 +21,7 @@ namespace AngelScript
             // This happens through the [MyComponent]::Reflect() function.
             m_descriptors.insert(m_descriptors.end(), {
                 AngelScriptEditorSystemComponent::CreateDescriptor(),
+                AngelScriptBuilderComponent::CreateDescriptor()
             });
         }
 

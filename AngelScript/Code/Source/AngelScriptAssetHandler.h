@@ -17,7 +17,7 @@ namespace AngelScript
     {
     public:
         AZ_CLASS_ALLOCATOR(AngelScriptAssetHandler, AZ::SystemAllocator, 0);
-        AZ_RTTI(AngelScriptAssetHandler, "{ABCDEF01-2345-6789-ABCD-EF0123456789}", AZ::Data::AssetHandler);
+        AZ_RTTI(AngelScriptAssetHandler, "{EC94F51A-F2E2-4AB3-B1C4-7AFEC324A131}", AZ::Data::AssetHandler);
 
         AngelScriptAssetHandler();
         ~AngelScriptAssetHandler() override;
@@ -61,6 +61,9 @@ namespace AngelScript
 
         /// @brief Unregisters this asset handler.
         void Unregister();
+
+        // Inherited via AssetHandler
+        void GetHandledAssetTypes(AZStd::vector<AZ::Data::AssetType>& assetTypes) override;
     };
 
 } // namespace AngelScript

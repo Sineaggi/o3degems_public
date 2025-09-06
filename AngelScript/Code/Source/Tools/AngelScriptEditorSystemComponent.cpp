@@ -5,7 +5,7 @@
 #include <AngelScript/AngelScriptTypeIds.h>
 
 #include <AngelScript/AngelScriptAsset.h>
-#include <Tools/AngelScriptAssetHandler.h>
+#include <AngelScriptAssetHandler.h>
 
 namespace AngelScript
 {
