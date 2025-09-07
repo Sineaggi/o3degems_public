@@ -113,6 +113,25 @@ namespace AngelScript
 
         void RegisterBuilder();
 
+
+
+        // AngelScript Configuration
+        constexpr static AZStd::string_view AS_AllowUnsafeReferences = "/AngelScript/Configuration/AllowUnsafeReferences";
+        constexpr static AZStd::string_view AS_UseCharacterLiterals = "/AngelScript/Configuration/UseCharacterLiterals";
+        constexpr static AZStd::string_view AS_AllowMultilineStrings= "/AngelScript/Configuration/AllowMultilineStrings";
+        constexpr static AZStd::string_view AS_ScriptScanner = "/AngelScript/Configuration/ScriptScanner";
+        constexpr static AZStd::string_view AS_OptimizeBtyecode= "/AngelScript/Configuration/OptimizeBtyecode";
+        constexpr static AZStd::string_view AS_AutoGarbageCollect = "/AngelScript/Configuration/AutoGarbageCollect";
+        constexpr static AZStd::string_view AS_AlterSytanxNamedArgs = "/AngelScript/Configuration/AlterSytanxNamedArgs";
+        constexpr static AZStd::string_view AS_DisallowValueAssignForRefType = "/AngelScript/Configuration/DisallowValueAssignForRefType";
+        constexpr static AZStd::string_view AS_AllowImplicitHandleTypes = "/AngelScript/Configuration/AllowImplicitHandleTypes";
+        constexpr static AZStd::string_view AS_RequireEnumScope = "/AngelScript/Configuration/RequireEnumScope";
+        constexpr static AZStd::string_view AS_AlwaysImplDefaultCtor = "/AngelScript/Configuration/AlwaysImplDefaultCtor";
+        constexpr static AZStd::string_view AS_PropertyAccessorMode = "/AngelScript/Configuration/PropertyAccessorMode";
+        constexpr static AZStd::string_view AS_BuildWithoutLineCues = "/AngelScript/Configuration/BuildWithoutLineCues";
+
+
+
     };
 
 } // namespace AngelScript

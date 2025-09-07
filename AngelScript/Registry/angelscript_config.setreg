@@ -1,0 +1,27 @@
+{
+    "AngelScript": 
+    {
+        "Configuration":
+        {
+            "AllowUnsafeReferences": true,
+            "UseCharacterLiterals": true,
+            "AllowMultilineStrings": true,
+            "ScriptScanner": true,
+            "OptimizeBtyecode": true,
+            "AutoGarbageCollect": true,
+            "AlterSytanxNamedArgs": true,
+            "DisallowValueAssignForRefType": true,
+            "AllowImplicitHandleTypes": true,
+            "RequireEnumScope": true,
+            "AlwaysImplDefaultCtor": true,
+            "PropertyAccessorMode": 3,
+            "TypeCheckSwitchEnums": true,
+            "FloatIsFloat64": true,
+            "AllowDoubleType": true,
+            "WarnOnFloatConstantsForDoubles": true,
+            "WarnIntegerDivision": true,
+            "AutomaticImports": true,
+            "BuildWithoutLineCues": true
+        }
+    }
+}

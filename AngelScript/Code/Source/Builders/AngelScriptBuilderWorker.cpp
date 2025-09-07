@@ -1,6 +1,6 @@
 #include "AngelScriptBuilderWorker.h"
-#include "AngelScriptBuilderWorker.h"
-#include "AngelScript/AngelScriptAsset.h"
+#include <AngelScript/AngelScriptBus.h>
+#include <AngelScript/AngelScriptAsset.h>
 
 // AngelScript Headers
 #include <angelscript.h>
@@ -100,8 +100,8 @@ namespace AngelScript
         fileIO->Close(fileHandle);
 
         // 2. Initialize a temporary AngelScript engine for compilation
-        asIScriptEngine* engine = asCreateScriptEngine();
-        engine->SetMessageCallback(asFUNCTION(BuilderMessageCallback), &response, asCALL_CDECL);
+        asIScriptEngine* engine = nullptr;
+        AngelScriptRequestBus::BroadcastResult(engine, &AngelScriptRequestBus::Events::GetScriptEngine);
 
         // 3. Compile the script using CScriptBuilder
         //CScriptBuilder builder;
@@ -125,30 +125,28 @@ namespace AngelScript
         AZ::IO::MemoryStream byteCodeStream(nullptr, 0);
         //module->SaveByteCode(&byteCodeStream);
 
-        engine->Release();
-        engine = nullptr;
 
         // 5. Create and serialize the AngelScriptAsset
         AngelScriptAsset asset;
         asset.m_moduleName = moduleName;
         //asset.m_byteCode.assign(reinterpret_cast<const char*>(byteCodeStream.GetData()), byteCodeStream.GetLength());
 
-        AZStd::string destPath;
-        AzFramework::StringFunc::Path::ConstructFull(request.m_tempDirPath.c_str(), "script", "asasset", destPath);
+        //AZStd::string destPath;
+        //AzFramework::StringFunc::Path::ConstructFull(request.m_tempDirPath.c_str(), "script", "asasset", destPath);
 
-        if (!AZ::Utils::SaveObjectToFile(destPath, AZ::DataStream::ST_JSON, &asset))
-        {
-            AZ_Error("AngelScriptBuilder", false, "Failed to save asset product to file: %s", destPath.c_str());
-            response.m_resultCode = AssetBuilderSDK::ProcessJobResult_Failed;
-            return;
-        }
+        //if (!AZ::Utils::SaveObjectToFile(destPath, AZ::DataStream::ST_JSON, &asset))
+        //{
+        //    AZ_Error("AngelScriptBuilder", false, "Failed to save asset product to file: %s", destPath.c_str());
+        //    response.m_resultCode = AssetBuilderSDK::ProcessJobResult_Failed;
+        //    return;
+        //}
 
-        // 6. Report the product as output
-        AssetBuilderSDK::JobProduct jobProduct(destPath);
-        
-        ///jobProduct.m_assetId.m_guid = AZ::AzTypeInfo<AngelScriptAsset>::Uuid();
-        //jobProduct.m_assetId.m_subId = 0; // Or generate a sub-ID if needed
-        response.m_outputProducts.push_back(jobProduct);
+        //// 6. Report the product as output
+        //AssetBuilderSDK::JobProduct jobProduct(destPath);
+        //
+        /////jobProduct.m_assetId.m_guid = AZ::AzTypeInfo<AngelScriptAsset>::Uuid();
+        ////jobProduct.m_assetId.m_subId = 0; // Or generate a sub-ID if needed
+        //response.m_outputProducts.push_back(jobProduct);
         response.m_resultCode = AssetBuilderSDK::ProcessJobResult_Success;
     }
 

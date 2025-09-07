@@ -11,6 +11,7 @@
 #include <AzCore/Serialization/EditContext.h>
 #include <AzCore/Serialization/EditContextConstants.inl>
 #include <AzCore/Console/ILogger.h>
+#include <AzCore/Settings/SettingsRegistry.h>
 
 #include <AngelScriptAssetHandler.h>
 
@@ -104,6 +105,7 @@ namespace AngelScript
 
 
         AZ::AssetTypeInfoBus::Handler::BusConnect(AZ::AzTypeInfo<AngelScriptAsset>::Uuid());
+
     }
 
     void AngelScriptSystemComponent::RegisterBuilder()
@@ -280,6 +282,36 @@ namespace AngelScript
         // Set the message callback to receive information on errors in scripts.
         int r = m_scriptEngine->SetMessageCallback(asFUNCTION(MessageCallback), 0, asCALL_CDECL);
         AZ_Assert(r >= 0, "Failed to set AngelScript message callback.");
+
+
+#define AS_SET_ENGINE_PROPERTY(AS_EP_ENUM, SetRegPath) {\
+            bool propertyValue = true; \
+            settingsRegistry->Get(propertyValue, SetRegPath); \
+            m_scriptEngine->SetEngineProperty(AS_EP_ENUM, propertyValue ? 1 : 0); \
+}
+
+        // Get AngelScript configuration from SettingsRegistry
+        if (auto settingsRegistry = AZ::SettingsRegistry::Get(); settingsRegistry != nullptr)
+        {
+            AS_SET_ENGINE_PROPERTY(asEP_ALLOW_UNSAFE_REFERENCES, AS_AllowUnsafeReferences);
+            AS_SET_ENGINE_PROPERTY(asEP_USE_CHARACTER_LITERALS, AS_UseCharacterLiterals);
+            AS_SET_ENGINE_PROPERTY(asEP_ALLOW_MULTILINE_STRINGS, AS_AllowMultilineStrings);
+            AS_SET_ENGINE_PROPERTY(asEP_SCRIPT_SCANNER, AS_ScriptScanner);
+            AS_SET_ENGINE_PROPERTY(asEP_OPTIMIZE_BYTECODE, AS_OptimizeBtyecode);
+            AS_SET_ENGINE_PROPERTY(asEP_AUTO_GARBAGE_COLLECT, AS_AutoGarbageCollect);
+            AS_SET_ENGINE_PROPERTY(asEP_ALTER_SYNTAX_NAMED_ARGS, AS_AlterSytanxNamedArgs);
+            AS_SET_ENGINE_PROPERTY(asEP_DISALLOW_VALUE_ASSIGN_FOR_REF_TYPE, AS_DisallowValueAssignForRefType);
+            AS_SET_ENGINE_PROPERTY(asEP_ALLOW_IMPLICIT_HANDLE_TYPES, AS_AllowImplicitHandleTypes);
+            AS_SET_ENGINE_PROPERTY(asEP_REQUIRE_ENUM_SCOPE, AS_RequireEnumScope);
+            AS_SET_ENGINE_PROPERTY(asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, AS_AlwaysImplDefaultCtor);
+            AS_SET_ENGINE_PROPERTY(asEP_BUILD_WITHOUT_LINE_CUES, AS_BuildWithoutLineCues);
+
+            AZ::u64 propertyAccessorMode = 3; // 0 = disable, 1 = app registered only, 2 = app and script created, 3 = flag with 'property' attribute
+            settingsRegistry->Get(propertyAccessorMode, AS_PropertyAccessorMode);
+            m_scriptEngine->SetEngineProperty(asEP_PROPERTY_ACCESSOR_MODE, propertyAccessorMode);
+        }
+
+
 
         // Register standard add-ons
         //RegisterStdString(m_scriptEngine);
