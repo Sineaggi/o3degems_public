@@ -20,6 +20,7 @@
 // AngelScript Headers
 #include <angelscript.h>
 
+#pragma optimize("", off)
 
 namespace AngelScript
 {
@@ -335,13 +336,13 @@ namespace AngelScript
 
     void AngelScriptSystemComponent::CreateScriptWorkspace()
     {
-        // Create a dedicated directory for AngelScript files within the project's user folder.
+        // Create a dedicated directory for AngelScript files within the project's folder.
         // This makes it easy for users to manage their scripts.
-        const char* userPath = AZ::IO::FileIOBase::GetInstance()->GetAlias("@user@");
-        if (userPath)
+        const char* projectPath = AZ::IO::FileIOBase::GetInstance()->GetAlias("@projectroot@");
+        if (projectPath)
         {
-            m_scriptWorkspacePath = userPath;
-            m_scriptWorkspacePath += "/AngelScript";
+            m_scriptWorkspacePath = projectPath;
+            m_scriptWorkspacePath /= "AngelScript";
 
             if (!AZ::IO::FileIOBase::GetInstance()->Exists(m_scriptWorkspacePath.c_str()))
             {
@@ -400,3 +401,6 @@ namespace AngelScript
     }
 
 } // namespace AngelScript
+
+
+#pragma optimize("", on)

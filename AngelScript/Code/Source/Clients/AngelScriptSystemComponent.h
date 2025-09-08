@@ -105,7 +105,7 @@ namespace AngelScript
         void CreateScriptWorkspace();
 
         // The path to the AngelScript workspace directory.
-        AZStd::string m_scriptWorkspacePath;
+        AZ::IO::Path m_scriptWorkspacePath;
 
         AZStd::unique_ptr<AngelScriptAssetHandler> m_angelSriptAssetHandler;
 
