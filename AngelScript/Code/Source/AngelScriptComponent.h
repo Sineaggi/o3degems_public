@@ -2,7 +2,11 @@
 
 #include <AzCore/Asset/AssetCommon.h>
 
+#include <AzCore/Component/Component.h>
+#include <AzCore/Component/ComponentBus.h>
+
 #include "AngelScript/AngelScriptAsset.h"
+
 
 // Forward declare AngelScript types to avoid including the header here
 class asIScriptObject;
@@ -10,6 +14,8 @@ class asIScriptFunction;
 
 namespace AngelScript
 {
+    class AngelScriptASComponentDescriptor;
+
     /// @class AngelScriptComponent
     /// @brief The component that attaches to an AZ::Entity to execute AngelScript logic.
     /// This component holds an asset reference to a compiled AngelScriptAsset.
@@ -20,7 +26,7 @@ namespace AngelScript
         , public AZ::Data::AssetBus::Handler
     {
     public:
-        AZ_COMPONENT(AngelScriptComponent, "{C5971795-0B68-4580-BC56-D43643618055}");
+        AZ_RTTI(AngelScriptComponent, "{C5971795-0B68-4580-BC56-D43643618055}", AZ::Component);
 
         AngelScriptComponent() = default;
         ~AngelScriptComponent() override = default;
@@ -31,6 +37,9 @@ namespace AngelScript
         static void GetIncompatibleServices(AZ::ComponentDescriptor::DependencyArrayType& incompatible);
         static void GetRequiredServices(AZ::ComponentDescriptor::DependencyArrayType& required);
         static void GetDependentServices(AZ::ComponentDescriptor::DependencyArrayType& dependent);
+
+        static AZ::ComponentDescriptor* CreateDescriptor();
+
 
     protected:
         //////////////////////////////////////////////////////////////////////////
@@ -68,5 +77,59 @@ namespace AngelScript
         asIScriptFunction* m_onDestroyFunction = nullptr;
         asIScriptFunction* m_onTickFunction = nullptr;
     };
+
+
+
+    class AngelScriptASComponentDescriptor :
+        public AZ::ComponentDescriptorHelper<AngelScriptComponent>
+    {
+    public:
+        AZ_CLASS_ALLOCATOR(AngelScriptASComponentDescriptor, AZ::SystemAllocator);
+        AZ_TYPE_INFO(AngelScriptASComponentDescriptor, "{5977E961-D107-4533-BC20-116DC07C81F4}");
+
+        AngelScriptASComponentDescriptor() = default;
+
+        void Reflect(AZ::ReflectContext* reflection) const override;
+
+        void GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided, const AZ::Component* instance) const override;
+        void GetDependentServices(AZ::ComponentDescriptor::DependencyArrayType& dependent, const AZ::Component* instance) const override;
+        void GetRequiredServices(AZ::ComponentDescriptor::DependencyArrayType& required, const AZ::Component* instance) const override;
+        ///void GetWarnings(AZ::ComponentDescriptor::StringWarningArray& warnings, const AZ::Component* instance) const override;
+
+
+        AZStd::string m_name;
+        AZ::Uuid m_uuid;
+
+
+    };
+    void AngelScriptASComponentDescriptor::Reflect(AZ::ReflectContext* reflection) const
+    {
+        AngelScriptComponent::Reflect(reflection);
+    }
+
+    void AngelScriptASComponentDescriptor::GetProvidedServices(
+        AZ::ComponentDescriptor::DependencyArrayType& provided, [[maybe_unused]] const AZ::Component* instance) const
+    {
+        AngelScriptComponent::GetProvidedServices(provided);
+    }
+
+    void AngelScriptASComponentDescriptor::GetDependentServices(
+        [[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& dependent, [[maybe_unused]] const AZ::Component* instance) const
+    {
+        AngelScriptComponent::GetDependentServices(dependent);
+    }
+
+    void AngelScriptASComponentDescriptor::GetRequiredServices(
+        AZ::ComponentDescriptor::DependencyArrayType& required, [[maybe_unused]] const AZ::Component* instance) const
+    {
+        AngelScriptComponent::GetRequiredServices(required);
+    }
+
+    //void AngelScriptASComponentDescriptor::GetWarnings(
+    //    AZ::ComponentDescriptor::StringWarningArray& warnings, const AZ::Component* instance) const
+    //{
+    //}
+
+
 
 } // namespace AngelScript

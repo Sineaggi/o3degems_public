@@ -42,7 +42,15 @@ namespace AngelScript
         AZ_Assert(AZ::Data::AssetManager::IsReady(), "Asset manager is not ready!");
         if (AZ::Data::AssetManager::IsReady())
         {
-            AZ::Data::AssetManager::Instance().RegisterHandler(this, AZ::AzTypeInfo<AngelScriptAsset>::Uuid());
+            auto assetType = AZ::AzTypeInfo<AngelScriptAsset>::Uuid();
+
+            AZ::Data::AssetManager::Instance().RegisterHandler(this, assetType);
+
+            // Use AssetCatalog service to register ScriptEvent asset type and extension
+            AZ::Data::AssetCatalogRequestBus::Broadcast(&AZ::Data::AssetCatalogRequests::AddAssetType, assetType);
+            AZ::Data::AssetCatalogRequestBus::Broadcast(&AZ::Data::AssetCatalogRequests::EnableCatalogForAsset, assetType);
+            AZ::Data::AssetCatalogRequestBus::Broadcast(&AZ::Data::AssetCatalogRequests::AddExtension, AngelScriptAsset::GetFileFilter());
+
         }
         AZ::AssetTypeInfoBus::Handler::BusConnect(AZ::AzTypeInfo<AngelScriptAsset>::Uuid());
     }
@@ -68,59 +76,93 @@ namespace AngelScript
 
     AZ::Data::AssetHandler::LoadResult AngelScriptAssetHandler::LoadAssetData(const AZ::Data::Asset<AZ::Data::AssetData>& asset, AZStd::shared_ptr<AZ::Data::AssetDataStream> stream, const AZ::Data::AssetFilterCB& assetLoadFilterCB)
     {
-        //AZ_PROFILE_FUNCTION(AZ::Debug::ProfileCategory::Asset);
+        AngelScriptAsset* assetData = asset.GetAs<AngelScriptAsset>();
+        AZ_Assert(assetData, "Asset is of the wrong type.");
+        AZ::SerializeContext* serializeContext = nullptr;
+        AZ::ComponentApplicationBus::BroadcastResult(serializeContext, &AZ::ComponentApplicationRequests::GetSerializeContext);
+        AZ_Assert(serializeContext, "Unable to retrieve serialize context.");
 
-        AZ::Data::AssetHandler::LoadResult Result = AZ::Data::AssetHandler::LoadResult::Error;
-
-        AngelScriptAsset* scriptAsset = asset.GetAs<AngelScriptAsset>();
-        if (!scriptAsset)
+        if (AZ::Utils::LoadObjectFromStreamInPlace<AngelScriptData>
+            (*stream
+                , assetData->m_scriptData
+                , serializeContext
+                , AZ::ObjectStream::FilterDescriptor(assetLoadFilterCB)))
         {
-            AZLOG_ERROR("AngelScript", "Failed to cast asset to AngelScriptAsset.");
-            return Result;
-        }
-
-        // Deserialize the entire AngelScriptAsset object from the product file stream.
-        AZ::TypeId angelScriptTypeId = AZ::AzTypeInfo<AngelScriptAsset>::Uuid();
-        AZ::ObjectStream::FilterDescriptor filter(assetLoadFilterCB);
-        if (!AZ::Utils::LoadObjectFromStream(*stream, nullptr, &angelScriptTypeId, filter))
-        {
-            AZLOG_ERROR("AngelScript", "Failed to load/deserialize AngelScriptAsset from stream for asset %s", asset.GetId().ToString<AZStd::string>().c_str());
-            return Result;
-        }
-
-        // Now that the asset data is loaded into memory, load the bytecode into the AngelScript engine.
-        asIScriptEngine* engine = nullptr;
-        AngelScriptRequestBus::BroadcastResult(engine, &AngelScriptRequestBus::Events::GetScriptEngine);
-
-        if (!engine)
-        {
-            AZLOG_ERROR("AngelScript", "Cannot load script asset %s, AngelScript engine is not available.", asset.GetId().ToString<AZStd::string>().c_str());
-            // We return true because the asset data itself loaded correctly from disk. The engine might initialize later.
             return AZ::Data::AssetHandler::LoadResult::LoadComplete;
         }
-
-        asIScriptModule* module = engine->GetModule(scriptAsset->m_moduleName.c_str(), asGM_ALWAYS_CREATE);
-        if (!module)
+        else
         {
-            AZLOG_ERROR("AngelScript", "Failed to create or get module '%s' for asset %s", scriptAsset->m_moduleName.c_str(), asset.GetId().ToString<AZStd::string>().c_str());
-            return Result;
+            return AZ::Data::AssetHandler::LoadResult::Error;
         }
 
-        // Use a memory stream to load the bytecode buffer into the module.
-        AZ::IO::MemoryStream byteCodeStream(scriptAsset->m_byteCode.data(), scriptAsset->m_byteCode.size());
-        int r = module->LoadByteCode(reinterpret_cast<asIBinaryStream*>(&byteCodeStream));
-        if (r < 0)
-        {
-            AZLOG_ERROR("AngelScript", "Failed to load bytecode into module '%s'. Error code: %d", scriptAsset->m_moduleName.c_str(), r);
-            engine->DiscardModule(scriptAsset->m_moduleName.c_str());
-            return Result;
-        }
 
-        AZ::Data::AssetInfo assetInfo;
-        AZ::Data::AssetCatalogRequestBus::BroadcastResult(assetInfo, &AZ::Data::AssetCatalogRequestBus::Events::GetAssetInfoById, asset.GetId());
-        AZLOG_INFO("AngelScript", "Successfully loaded script asset '%s' into module '%s'.", assetInfo.m_relativePath.c_str(), scriptAsset->m_moduleName.c_str());
+        //AZ::Data::AssetHandler::LoadResult Result = AZ::Data::AssetHandler::LoadResult::LoadComplete;
 
-        return AZ::Data::AssetHandler::LoadResult::LoadComplete;
+        //auto sizeBytes = stream->GetLoadedSize();
+
+        //AZStd::unique_ptr<char[]> buffer = AZStd::make_unique<char[]>(sizeBytes + 1);
+        //if (stream->Read(sizeBytes, buffer.get()))
+        //{
+        //    buffer[sizeBytes] = '\0';
+        //}
+
+
+
+
+
+        ////AZ_PROFILE_FUNCTION(AZ::Debug::ProfileCategory::Asset);
+
+        /////AZ::Data::AssetHandler::LoadResult Result = AZ::Data::AssetHandler::LoadResult::Error;
+
+        //AngelScriptAsset* scriptAsset = asset.GetAs<AngelScriptAsset>();
+        //if (!scriptAsset)
+        //{
+        //    AZLOG_ERROR("AngelScript", "Failed to cast asset to AngelScriptAsset.");
+        //    return Result;
+        //}
+
+        //// Deserialize the entire AngelScriptAsset object from the product file stream.
+        //AZ::TypeId angelScriptTypeId = AZ::AzTypeInfo<AngelScriptAsset>::Uuid();
+        //AZ::ObjectStream::FilterDescriptor filter(assetLoadFilterCB);
+        //if (!AZ::Utils::LoadObjectFromStream(*stream, nullptr, &angelScriptTypeId, filter))
+        //{
+        //    AZLOG_ERROR("AngelScript", "Failed to load/deserialize AngelScriptAsset from stream for asset %s", asset.GetId().ToString<AZStd::string>().c_str());
+        //    return Result;
+        //}
+
+        //// Now that the asset data is loaded into memory, load the bytecode into the AngelScript engine.
+        //asIScriptEngine* engine = nullptr;
+        //AngelScriptRequestBus::BroadcastResult(engine, &AngelScriptRequestBus::Events::GetScriptEngine);
+
+        //if (!engine)
+        //{
+        //    AZLOG_ERROR("AngelScript", "Cannot load script asset %s, AngelScript engine is not available.", asset.GetId().ToString<AZStd::string>().c_str());
+        //    // We return true because the asset data itself loaded correctly from disk. The engine might initialize later.
+        //    return AZ::Data::AssetHandler::LoadResult::LoadComplete;
+        //}
+
+        //asIScriptModule* module = engine->GetModule(scriptAsset->m_moduleName.c_str(), asGM_ALWAYS_CREATE);
+        //if (!module)
+        //{
+        //    AZLOG_ERROR("AngelScript", "Failed to create or get module '%s' for asset %s", scriptAsset->m_moduleName.c_str(), asset.GetId().ToString<AZStd::string>().c_str());
+        //    return Result;
+        //}
+
+        //// Use a memory stream to load the bytecode buffer into the module.
+        //AZ::IO::MemoryStream byteCodeStream = scriptAsset->m_scriptData.CreateScriptReadStream();//(scriptAsset->m_scriptData.data(), scriptAsset->m_byteCode.size());
+        //int r = module->LoadByteCode(reinterpret_cast<asIBinaryStream*>(&byteCodeStream));
+        //if (r < 0)
+        //{
+        //    AZLOG_ERROR("AngelScript", "Failed to load bytecode into module '%s'. Error code: %d", scriptAsset->m_moduleName.c_str(), r);
+        //    engine->DiscardModule(scriptAsset->m_moduleName.c_str());
+        //    return Result;
+        //}
+
+        //AZ::Data::AssetInfo assetInfo;
+        //AZ::Data::AssetCatalogRequestBus::BroadcastResult(assetInfo, &AZ::Data::AssetCatalogRequestBus::Events::GetAssetInfoById, asset.GetId());
+        //AZLOG_INFO("AngelScript", "Successfully loaded script asset '%s' into module '%s'.", assetInfo.m_relativePath.c_str(), scriptAsset->m_moduleName.c_str());
+
+        //return AZ::Data::AssetHandler::LoadResult::LoadComplete;
     }
 
     void AngelScriptAssetHandler::DestroyAsset(AZ::Data::AssetPtr ptr)
@@ -177,4 +219,4 @@ namespace AngelScript
 } // namespace AngelScript
 
 
-#pragma optimize("", on)
+#pragma optimize("", on) 

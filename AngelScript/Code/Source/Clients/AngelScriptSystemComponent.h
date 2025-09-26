@@ -12,6 +12,9 @@
 
 #include <angelscript.h>
 
+#include <AzFramework/Asset/AssetCatalogBus.h>
+
+
 namespace AngelScript
 {
     class AngelScriptSystemComponent
@@ -19,6 +22,7 @@ namespace AngelScript
         , protected AngelScriptRequestBus::Handler
         , public AZ::TickBus::Handler
         , public AZ::AssetTypeInfoBus::Handler
+        , private AzFramework::AssetCatalogEventBus::Handler
 
     {
     public:
@@ -67,6 +71,11 @@ namespace AngelScript
         bool RegisterGlobalProperty(const char* declaration, void* propertyPtr) override;
         ////////////////////////////////////////////////////////////////////////
 
+        // AssetCatalogEventBus Overrides
+        void OnCatalogLoaded(const char* catalogFile) override;
+        void OnCatalogAssetRemoved(const AZ::Data::AssetId& /*assetId*/, const AZ::Data::AssetInfo& assetInfo) override;
+        void OnCatalogAssetAdded(const AZ::Data::AssetId& /*assetId*/) override;
+        void OnCatalogAssetChanged(const AZ::Data::AssetId& /*assetId*/) override;
         ////////////////////////////////////////////////////////////////////////
         // AZ::AssetTypeInfoBus::Handler overrides
          //! this is the same type Id (uuid) as your AssetData-derived class's RTTI type.
@@ -93,6 +102,15 @@ namespace AngelScript
         //! You can use this to filter by subIds or do your own validation here if needed
         bool CanCreateComponent([[maybe_unused]] const AZ::Data::AssetId& assetId) const override;
         //////////////////////////////////////////////////////////////////////////
+
+
+        /// Scans all AngelScript assets and registers their classes as components.
+        void ScanAndRegisterScriptComponents();
+
+        /// Unregisters all dynamically created component descriptors.
+        void UnregisterScriptComponents();
+
+        AZStd::vector<AZ::ComponentDescriptor*> m_registeredScriptDescriptors;
 
     private:
         /// @brief Creates and configures the AngelScript engine instance.

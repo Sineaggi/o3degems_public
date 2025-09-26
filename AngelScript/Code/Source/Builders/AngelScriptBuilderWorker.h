@@ -4,6 +4,7 @@
 #include <AssetBuilderSDK/AssetBuilderSDK.h>
 
 #include <AngelScript/AngelScriptAsset.h>
+#include <Preprocessor/AngelScriptPreprocessor.h>
 
 namespace AngelScript
 {
@@ -57,6 +58,8 @@ namespace AngelScript
             }
             return m_fingerprintString.c_str();
         }
+
+        mutable AngelScriptPreprocessor m_preprocessor;
 
         mutable AZStd::string m_fingerprintString;
 

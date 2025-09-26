@@ -1,5 +1,6 @@
 #include "AngelScriptComponent.h"
 #include <AzCore/Math/Crc.h>
+#include <AzCore/Component/TickBus.h>
 //#include <AngelScript/AngelScriptBus.h>
 //
 #include <AzCore/Serialization/SerializeContext.h>
@@ -19,7 +20,7 @@ namespace AngelScript
         {
             serializeContext->Class<AngelScriptComponent, AZ::Component>()
                 ->Version(1)
-                //->Field("ScriptAsset", &AngelScriptComponent::m_scriptAsset)
+                ->Field("m_scriptAsset", &AngelScriptComponent::m_scriptAsset)
                 ;
 
             if (AZ::EditContext* ec = serializeContext->GetEditContext())
@@ -56,6 +57,11 @@ namespace AngelScript
 
     void AngelScriptComponent::GetDependentServices(AZ::ComponentDescriptor::DependencyArrayType& /*dependent*/)
     {
+    }
+
+    inline AZ::ComponentDescriptor* AngelScriptComponent::CreateDescriptor()
+    {
+        return aznew AngelScriptASComponentDescriptor();
     }
 
     void AngelScriptComponent::Activate()

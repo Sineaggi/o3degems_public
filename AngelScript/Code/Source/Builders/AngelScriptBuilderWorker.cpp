@@ -11,6 +11,7 @@
 #include <AzCore/PlatformDef.h>
 #include <AzFramework/StringFunc/StringFunc.h>
 #include <AzCore/Console/ILogger.h>
+#include <AssetBuilderSDK/SerializationDependencies.h>
 
 #pragma optimize("", off)
 
@@ -108,12 +109,14 @@ namespace AngelScript
         AZStd::string moduleName = request.m_sourceFile;
         AzFramework::StringFunc::Path::GetFileName(moduleName.c_str(), moduleName);
 
+        m_preprocessor.Preprocess(request.m_fullPath.c_str());
+
         ///builder.StartNewModule(engine, moduleName.c_str());
         //builder.AddSectionFromMemory(request.m_sourceFile.c_str(), fileBuffer.data());
         ////int r = builder.BuildModule();
 
         //if (r < 0)
-        ////{
+        ////{ 
         //    AZ_Error("AngelScriptBuilder", false, "AngelScript compilation failed for %s.", request.m_sourceFile.c_str());
         //   engine->Release();
         //    response.m_resultCode = AssetBuilderSDK::ProcessJobResult_Failed;
@@ -129,10 +132,21 @@ namespace AngelScript
         // 5. Create and serialize the AngelScriptAsset
         AngelScriptAsset asset;
         asset.m_moduleName = moduleName;
+
         //asset.m_byteCode.assign(reinterpret_cast<const char*>(byteCodeStream.GetData()), byteCodeStream.GetLength());
 
-        //AZStd::string destPath;
-        //AzFramework::StringFunc::Path::ConstructFull(request.m_tempDirPath.c_str(), "script", "asasset", destPath);
+        AZStd::string filename;
+        AzFramework::StringFunc::Path::GetFileName(request.m_sourceFile.c_str(), filename);
+
+        AZStd::string outputPath;
+        AzFramework::StringFunc::Path::ConstructFull(request.m_tempDirPath.c_str(), filename.c_str(), outputPath, true);
+
+
+        if (!AZ::Utils::SaveObjectToFile(outputPath, AZ::DataStream::ST_BINARY, &asset))
+        {
+            AZ_Error(__FUNCTION__, false, "Failed to save material type to file '%s'!", outputPath.c_str());
+            return;
+        }
 
         //if (!AZ::Utils::SaveObjectToFile(destPath, AZ::DataStream::ST_JSON, &asset))
         //{
@@ -142,12 +156,20 @@ namespace AngelScript
         //}
 
         //// 6. Report the product as output
-        //AssetBuilderSDK::JobProduct jobProduct(destPath);
-        //
-        /////jobProduct.m_assetId.m_guid = AZ::AzTypeInfo<AngelScriptAsset>::Uuid();
-        ////jobProduct.m_assetId.m_subId = 0; // Or generate a sub-ID if needed
-        //response.m_outputProducts.push_back(jobProduct);
-        response.m_resultCode = AssetBuilderSDK::ProcessJobResult_Success;
+        AssetBuilderSDK::JobProduct jobProduct(outputPath);
+        
+
+        if (!AssetBuilderSDK::OutputObject(
+            &asset, outputPath, azrtti_typeid<AngelScriptAsset>(), AngelScriptAsset::AssetSubId, jobProduct))
+        {
+            AZ_Error("SoundAssetBuilder", false, "Failed to output product dependencies.");
+            response.m_resultCode = AssetBuilderSDK::ProcessJobResult_Failed;
+        }
+        else
+        {
+            response.m_outputProducts.push_back(AZStd::move(jobProduct));
+            response.m_resultCode = AssetBuilderSDK::ProcessJobResult_Success;
+        }
     }
 
 
