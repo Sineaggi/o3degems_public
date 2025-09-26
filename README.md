@@ -57,3 +57,12 @@ Gems\o3degems_public\AngelScript\External\angelscript_2.37.0\sdk\angelscript\pro
 This will produce the angelscript64d.lib and angelscript64.lib files necessary for linking into O3DE.
 
 The fun work starts here! Let's get AngelScript natively supported in O3DE!
+
+# CHANGELOG
+
+## 09/07/2025
+
+- Added the asset type and asset building and handling code for AngelScript files
+- Setup a Registry file for AngleScript configuration
+- No actual AS compilation yet, still setting up the foundations
+
