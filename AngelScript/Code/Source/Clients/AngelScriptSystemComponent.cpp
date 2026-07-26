@@ -369,10 +369,7 @@ namespace AngelScript
         // TEMPORARY Phase-0 debugging aid: register a minimal script-callable log function
         // (Print(int)) so demo scripts have an observable side effect until real BehaviorContext
         // binding lands in Phase 1.
-        {
-            int printRegResult = m_scriptEngine->RegisterGlobalFunction("void Print(int)", asFUNCTION(ScriptPrint), asCALL_CDECL);
-            AZ_Error("AngelScript", printRegResult >= 0, "Failed to register global function 'void Print(int)'.");
-        }
+        RegisterGlobalFunction("void Print(int)", reinterpret_cast<const void*>(ScriptPrint));
 
         AZLOG_INFO("AngelScript Engine Initialized.");
 
