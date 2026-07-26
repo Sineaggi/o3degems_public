@@ -102,34 +102,5 @@ namespace AngelScript
 
 
     };
-    void AngelScriptASComponentDescriptor::Reflect(AZ::ReflectContext* reflection) const
-    {
-        AngelScriptComponent::Reflect(reflection);
-    }
-
-    void AngelScriptASComponentDescriptor::GetProvidedServices(
-        AZ::ComponentDescriptor::DependencyArrayType& provided, [[maybe_unused]] const AZ::Component* instance) const
-    {
-        AngelScriptComponent::GetProvidedServices(provided);
-    }
-
-    void AngelScriptASComponentDescriptor::GetDependentServices(
-        [[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& dependent, [[maybe_unused]] const AZ::Component* instance) const
-    {
-        AngelScriptComponent::GetDependentServices(dependent);
-    }
-
-    void AngelScriptASComponentDescriptor::GetRequiredServices(
-        AZ::ComponentDescriptor::DependencyArrayType& required, [[maybe_unused]] const AZ::Component* instance) const
-    {
-        AngelScriptComponent::GetRequiredServices(required);
-    }
-
-    //void AngelScriptASComponentDescriptor::GetWarnings(
-    //    AZ::ComponentDescriptor::StringWarningArray& warnings, const AZ::Component* instance) const
-    //{
-    //}
-
-
 
 } // namespace AngelScript

@@ -62,7 +62,7 @@ namespace AngelScript
     {
     }
 
-    inline AZ::ComponentDescriptor* AngelScriptComponent::CreateDescriptor()
+    AZ::ComponentDescriptor* AngelScriptComponent::CreateDescriptor()
     {
         return aznew AngelScriptASComponentDescriptor();
     }
@@ -225,6 +225,33 @@ namespace AngelScript
         m_onCreateFunction = nullptr;
         m_onDestroyFunction = nullptr;
         m_onTickFunction = nullptr;
+    }
+
+    // --- AngelScriptASComponentDescriptor ---
+    // Defined here (not in the header) so the header can be included by multiple translation units
+    // without producing multiple-definition link errors.
+
+    void AngelScriptASComponentDescriptor::Reflect(AZ::ReflectContext* reflection) const
+    {
+        AngelScriptComponent::Reflect(reflection);
+    }
+
+    void AngelScriptASComponentDescriptor::GetProvidedServices(
+        AZ::ComponentDescriptor::DependencyArrayType& provided, [[maybe_unused]] const AZ::Component* instance) const
+    {
+        AngelScriptComponent::GetProvidedServices(provided);
+    }
+
+    void AngelScriptASComponentDescriptor::GetDependentServices(
+        AZ::ComponentDescriptor::DependencyArrayType& dependent, [[maybe_unused]] const AZ::Component* instance) const
+    {
+        AngelScriptComponent::GetDependentServices(dependent);
+    }
+
+    void AngelScriptASComponentDescriptor::GetRequiredServices(
+        AZ::ComponentDescriptor::DependencyArrayType& required, [[maybe_unused]] const AZ::Component* instance) const
+    {
+        AngelScriptComponent::GetRequiredServices(required);
     }
 
 } // namespace AngelScript
