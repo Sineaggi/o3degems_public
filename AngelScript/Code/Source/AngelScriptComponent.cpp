@@ -221,6 +221,8 @@ namespace AngelScript
         m_onCreateFunction = nullptr;
         m_onDestroyFunction = nullptr;
         m_onTickFunction = nullptr;
+
+        AZ::TickBus::Handler::BusDisconnect();
     }
 
     // --- AngelScriptASComponentDescriptor ---

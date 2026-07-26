@@ -143,7 +143,7 @@ namespace AngelScript
 
         if (!AZ::Utils::SaveObjectToFile(outputPath, AZ::DataStream::ST_BINARY, &asset))
         {
-            AZ_Error(__FUNCTION__, false, "Failed to save material type to file '%s'!", outputPath.c_str());
+            AZ_Error(__FUNCTION__, false, "Failed to save AngelScript asset to file '%s'!", outputPath.c_str());
             return;
         }
 
@@ -161,7 +161,7 @@ namespace AngelScript
         if (!AssetBuilderSDK::OutputObject(
             &asset, outputPath, azrtti_typeid<AngelScriptAsset>(), AngelScriptAsset::AssetSubId, jobProduct))
         {
-            AZ_Error("SoundAssetBuilder", false, "Failed to output product dependencies.");
+            AZ_Error("AngelScriptBuilder", false, "Failed to output product dependencies.");
             response.m_resultCode = AssetBuilderSDK::ProcessJobResult_Failed;
         }
         else

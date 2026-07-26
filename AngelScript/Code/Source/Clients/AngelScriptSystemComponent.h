@@ -42,7 +42,6 @@ namespace AngelScript
     private:
 
         asIScriptEngine* m_scriptEngine = nullptr;
-        asIScriptContext* m_scriptContext = nullptr;
         ScriptContextPool m_contextPool;
 
     protected:
