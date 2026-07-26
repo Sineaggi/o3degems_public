@@ -1,7 +1,7 @@
 #include "AngelScriptComponent.h"
 #include <AzCore/Math/Crc.h>
 #include <AzCore/Component/TickBus.h>
-//#include <AngelScript/AngelScriptBus.h>
+#include <AngelScript/AngelScriptBus.h>
 //
 #include <AzCore/Serialization/SerializeContext.h>
 #include <AzCore/Serialization/EditContext.h>
