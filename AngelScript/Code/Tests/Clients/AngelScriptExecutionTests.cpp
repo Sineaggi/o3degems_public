@@ -35,4 +35,22 @@ namespace AngelScriptTests
         AngelScript::ScriptContextPool pool; // never Initialize()d
         EXPECT_EQ(pool.Acquire(), nullptr);
     }
+
+    TEST_F(AngelScriptExecutionFixture, ContextPool_ReleaseAfterShutdownDoesNotStrand)
+    {
+        AngelScript::ScriptContextPool pool;
+        pool.Initialize(m_engine);
+
+        asIScriptContext* ctx = pool.Acquire();
+        ASSERT_NE(ctx, nullptr);
+
+        // Simulates Release() racing behind a concurrent Shutdown(): the context is
+        // still in flight when the pool is torn down. Release() must free it here
+        // rather than push it into the (already-cleared) free-list.
+        pool.Shutdown();
+        pool.Release(ctx);
+
+        // Pool remains shut down afterward; no stray context resurrected it.
+        EXPECT_EQ(pool.Acquire(), nullptr);
+    }
 }

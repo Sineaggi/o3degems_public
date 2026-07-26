@@ -49,6 +49,15 @@ namespace AngelScript
         }
         context->Unprepare();
         AZStd::lock_guard<AZStd::mutex> lock(m_mutex);
+        if (!m_engine)
+        {
+            // Pool was shut down while this context was in flight (e.g. Shutdown()
+            // ran concurrently between Acquire() and Release()). m_free has already
+            // been cleared and won't be drained again, so pushing here would strand
+            // the context forever. Free it immediately instead.
+            context->Release();
+            return;
+        }
         m_free.push_back(context);
     }
 } // namespace AngelScript
