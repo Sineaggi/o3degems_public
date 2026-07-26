@@ -30,7 +30,7 @@ namespace AngelScript
                     ->Attribute(AZ::Edit::Attributes::Category, "Scripting")
                     ->Attribute(AZ::Edit::Attributes::Icon, "Editor/Icons/Components/Script.png")
                     ->Attribute(AZ::Edit::Attributes::ViewportIcon, "Editor/Icons/Components/Viewport/Script.png")
-                    ->Attribute(AZ::Edit::Attributes::AppearsInAddComponentMenu, AZ_CRC("Game"))
+                    ->Attribute(AZ::Edit::Attributes::AppearsInAddComponentMenu, AZ_CRC_CE("Game"))
                     ->Attribute(AZ::Edit::Attributes::AutoExpand, true)
                     //->DataElement(AZ::Edit::UIHandlers::Default, &AngelScriptComponent::m_scriptAsset, "Script", "The AngelScript asset to execute.")
                     //->Attribute(AZ::Edit::Attributes::ChangeNotify, AZ_CRC("RefreshEntireTree"))
@@ -39,19 +39,22 @@ namespace AngelScript
         }
     }
 
-    void AngelScriptComponent::GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided)
+    void AngelScriptComponent::GetProvidedServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& provided)
     {
-        provided.push_back(AZ_CRC_CE("AngelScriptService"));
+        // Intentionally empty: the AngelScriptService is provided by AngelScriptSystemComponent,
+        // not by per-entity script components. Multiple AngelScriptComponents may coexist on
+        // different entities, so this component must not provide (or be incompatible with) the service.
     }
 
-    void AngelScriptComponent::GetIncompatibleServices(AZ::ComponentDescriptor::DependencyArrayType& incompatible)
+    void AngelScriptComponent::GetIncompatibleServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& incompatible)
     {
-        incompatible.push_back(AZ_CRC_CE("AngelScriptService"));
+        // Intentionally empty: see GetProvidedServices. Declaring AngelScriptService incompatible here
+        // would prevent this component from coexisting with the system component that provides it.
     }
 
     void AngelScriptComponent::GetRequiredServices(AZ::ComponentDescriptor::DependencyArrayType& required)
     {
-        // This component requires the main system component to be active.
+        // This component requires the main system component (which provides AngelScriptService) to be active.
         required.push_back(AZ_CRC_CE("AngelScriptService"));
     }
 

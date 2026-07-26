@@ -15,8 +15,6 @@
 #include <AzCore/Console/ILogger.h>
 #include <AzCore/Serialization/Utils.h>
 
-#pragma optimize("", off)
-
 namespace AngelScript
 {
 
@@ -176,7 +174,7 @@ namespace AngelScript
             if (engine)
             {
                 engine->DiscardModule(scriptAsset->m_moduleName.c_str());
-                AZLOG_INFO("AngelScript", "Discarded module '%s' on asset destruction.", scriptAsset->m_moduleName.c_str());
+                AZLOG_INFO("Discarded module '%s' on asset destruction.", scriptAsset->m_moduleName.c_str());
             }
         }
         delete ptr;
@@ -217,6 +215,3 @@ namespace AngelScript
     }
 
 } // namespace AngelScript
-
-
-#pragma optimize("", on) 

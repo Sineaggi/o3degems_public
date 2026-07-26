@@ -27,8 +27,6 @@
 #include <AzCore/RTTI/ReflectionManager.h>
 #include <AzCore/Component/ComponentApplication.h>
 
-#pragma optimize("", off)
-
 namespace AngelScript
 {
     AZ_COMPONENT_IMPL(AngelScriptSystemComponent, "AngelScriptSystemComponent",
@@ -48,7 +46,7 @@ namespace AngelScript
             {
                 ec->Class<AngelScriptSystemComponent>("AngelScript System", "Manages the AngelScript virtual machine and script execution environment.")
                     ->ClassElement(AZ::Edit::ClassElements::EditorData, "")
-                    ->Attribute(AZ::Edit::Attributes::AppearsInAddComponentMenu, AZ_CRC("System"))
+                    ->Attribute(AZ::Edit::Attributes::AppearsInAddComponentMenu, AZ_CRC_CE("System"))
                     ->Attribute(AZ::Edit::Attributes::AutoExpand, true)
                     ;
             }
@@ -83,7 +81,13 @@ namespace AngelScript
 
     AngelScriptSystemComponent::~AngelScriptSystemComponent()
     {
-        m_scriptEngine->ShutDownAndRelease();
+        // Deactivate() normally shuts the engine down (nulling m_scriptEngine). Guard here so the
+        // destructor is safe whether or not Deactivate() ran, and avoid a double ShutDownAndRelease().
+        if (m_scriptEngine)
+        {
+            m_scriptEngine->ShutDownAndRelease();
+            m_scriptEngine = nullptr;
+        }
 
         if (AngelScriptInterface::Get() == this)
         {
@@ -93,8 +97,9 @@ namespace AngelScript
 
     void AngelScriptSystemComponent::Init()
     {
-        m_scriptEngine = asCreateScriptEngine();
-        m_scriptContext = m_scriptEngine->CreateContext();
+        // The engine + context lifecycle is owned by Activate()/Deactivate()
+        // (InitializeAngelScriptEngine / ShutdownAngelScriptEngine). Creating the engine here as well
+        // caused a second engine to be created on Activate, leaking the first one.
     }
 
     void AngelScriptSystemComponent::Activate()
@@ -190,7 +195,7 @@ namespace AngelScript
         {
             return m_scriptEngine->CreateContext();
         }
-        AZLOG_ERROR("AngelScript", "Cannot create context: Script engine is not initialized.");
+        AZLOG_ERROR("Cannot create context: Script engine is not initialized.");
         return nullptr;
     }
 
@@ -207,7 +212,7 @@ namespace AngelScript
     {
         if (!m_scriptEngine)
         {
-            AZLOG_ERROR("AngelScript", "Cannot execute string: Script engine not initialized.");
+            AZLOG_ERROR("Cannot execute string: Script engine not initialized.");
             return false;
         }
 
@@ -440,7 +445,7 @@ namespace AngelScript
 
     void AngelScriptSystemComponent::ScanAndRegisterScriptComponents()
     {
-        AZLOG_INFO("AngelScript", "Scanning for script components to register...");
+        AZLOG_INFO("Scanning for script components to register...");
 
 
         AZStd::vector<AZ::Data::AssetId> assetIds;
@@ -485,7 +490,7 @@ namespace AngelScript
                 // Convention: only register public classes with a default factory.
                 if ((type->GetFlags() & asOBJ_SCRIPT_OBJECT) && type->GetFactoryByIndex(0))
                 {
-                    AZLOG_INFO("AngelScript", "Registering script component: %s", className.c_str());
+                    AZLOG_INFO("Registering script component: %s", className.c_str());
 
                     // Create a descriptor for our generic AngelScriptComponent
                     AngelScriptASComponentDescriptor* descriptor = static_cast<AngelScriptASComponentDescriptor*>(AngelScriptComponent::CreateDescriptor());
@@ -541,6 +546,3 @@ namespace AngelScript
     }
 
 } // namespace AngelScript
-
-
-#pragma optimize("", on)

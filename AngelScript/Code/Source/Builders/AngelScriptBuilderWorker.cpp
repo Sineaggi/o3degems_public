@@ -13,8 +13,6 @@
 #include <AzCore/Console/ILogger.h>
 #include <AssetBuilderSDK/SerializationDependencies.h>
 
-#pragma optimize("", off)
-
 namespace AngelScript
 {
     namespace
@@ -40,12 +38,12 @@ namespace AngelScript
 
             if (isError)
             {
-                AZLOG_ERROR("AngelScriptBuilder", false, logMessage.c_str());
+                AZLOG_ERROR("%s", logMessage.c_str());
                 ///response.m_issues.emplace_back(AZ::Uuid::Create(), logMessage.c_str(), AZ::Data::AssetIssue::Severity::Error);
             }
             else
             {
-                AZLOG_ERROR("AngelScriptBuilder", false, logMessage.c_str());
+                AZLOG_WARN("%s", logMessage.c_str());
                 //response.m_issues.emplace_back(AZ::Uuid::Create(), logMessage.c_str(), AZ::Data::AssetIssue::Severity::Warning);
             }
         }
@@ -175,6 +173,3 @@ namespace AngelScript
 
 
 } // namespace AngelScript
-
-
-#pragma optimize("", on)
