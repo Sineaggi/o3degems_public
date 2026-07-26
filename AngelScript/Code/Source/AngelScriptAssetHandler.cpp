@@ -80,9 +80,9 @@ namespace AngelScript
         AZ::ComponentApplicationBus::BroadcastResult(serializeContext, &AZ::ComponentApplicationRequests::GetSerializeContext);
         AZ_Assert(serializeContext, "Unable to retrieve serialize context.");
 
-        if (AZ::Utils::LoadObjectFromStreamInPlace<AngelScriptData>
+        if (AZ::Utils::LoadObjectFromStreamInPlace<AngelScriptAsset>
             (*stream
-                , assetData->m_scriptData
+                , *assetData
                 , serializeContext
                 , AZ::ObjectStream::FilterDescriptor(assetLoadFilterCB)))
         {

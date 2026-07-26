@@ -127,11 +127,12 @@ namespace AngelScript
         //module->SaveByteCode(&byteCodeStream);
 
 
-        // 5. Create and serialize the AngelScriptAsset
+        // 5. Create the product asset: store the SOURCE text (compiled at runtime).
         AngelScriptAsset asset;
         asset.m_moduleName = moduleName;
-
-        //asset.m_byteCode.assign(reinterpret_cast<const char*>(byteCodeStream.GetData()), byteCodeStream.GetLength());
+        asset.m_scriptData.m_debugName = request.m_sourceFile;
+        // fileBuffer was sized fileSize + 1 (trailing null); store just the source bytes.
+        asset.m_scriptData.m_script.assign(fileBuffer.begin(), fileBuffer.begin() + fileSize);
 
         AZStd::string filename;
         AzFramework::StringFunc::Path::GetFileName(request.m_sourceFile.c_str(), filename);
