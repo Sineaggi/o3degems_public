@@ -13,6 +13,6 @@ ly_add_external_target(
     NAME AngelScript
     VERSION
     3RDPARTY_ROOT_DIRECTORY ${ANGELSCRIPT_3RDPARTY_ROOT_DIRECTORY}
-    INCLUDE_DIRECTORIES sdk/angelscript/include
+    INCLUDE_DIRECTORIES sdk/angelscript/include sdk/add_on
     BUILD_DEPENDENCIES ${ANGELSCRIPT_LIB_PATH}
 )
