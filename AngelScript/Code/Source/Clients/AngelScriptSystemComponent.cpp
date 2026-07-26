@@ -184,6 +184,15 @@ namespace AngelScript
         AZ_TracePrintf("AngelScript", "[%s] (%d, %d) %s : %s", msg->section, msg->row, msg->col, typeStr, msg->message);
     }
 
+    // TEMPORARY Phase-0 debugging aid: a minimal script-callable log function so demo scripts have
+    // something observable to call. Deliberately takes an int (not a string) to avoid pulling in the
+    // scriptstdstring add-on, which is out of scope here. Remove once Phase 1's BehaviorContext
+    // binding provides real O3DE-facing script functions.
+    static void ScriptPrint(int value)
+    {
+        AZLOG_INFO("[AngelScript] Print(%d)", value);
+    }
+
     asIScriptEngine* AngelScriptSystemComponent::GetScriptEngine()
     {
         return m_scriptEngine;
@@ -356,6 +365,14 @@ namespace AngelScript
 
         // TODO: Register O3DE types and functions here.
         // For example: Registering vector types, entity manipulation functions, etc.
+
+        // TEMPORARY Phase-0 debugging aid: register a minimal script-callable log function
+        // (Print(int)) so demo scripts have an observable side effect until real BehaviorContext
+        // binding lands in Phase 1.
+        {
+            int printRegResult = m_scriptEngine->RegisterGlobalFunction("void Print(int)", asFUNCTION(ScriptPrint), asCALL_CDECL);
+            AZ_Error("AngelScript", printRegResult >= 0, "Failed to register global function 'void Print(int)'.");
+        }
 
         AZLOG_INFO("AngelScript Engine Initialized.");
 
