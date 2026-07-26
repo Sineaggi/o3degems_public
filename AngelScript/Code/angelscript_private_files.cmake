@@ -12,6 +12,8 @@ set(FILES
     Source/AngelScriptAssetHandler.cpp
     Source/ScriptContextPool.h
     Source/ScriptContextPool.cpp
+    Source/ScriptModuleCompiler.h
+    Source/ScriptModuleCompiler.cpp
 
 # Preprocessor
     Source/Preprocessor/AngelScriptPreprocessor.h

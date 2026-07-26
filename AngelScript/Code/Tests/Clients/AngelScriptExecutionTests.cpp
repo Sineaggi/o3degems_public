@@ -1,6 +1,7 @@
 #include <AzTest/AzTest.h>
 #include <angelscript.h>
 #include <ScriptContextPool.h>
+#include <ScriptModuleCompiler.h>
 
 namespace AngelScriptTests
 {
@@ -52,5 +53,25 @@ namespace AngelScriptTests
 
         // Pool remains shut down afterward; no stray context resurrected it.
         EXPECT_EQ(pool.Acquire(), nullptr);
+    }
+
+    TEST_F(AngelScriptExecutionFixture, Compile_ValidSourceProducesModuleWithClass)
+    {
+        const char* source =
+            "class Hello {\n"
+            "  void OnCreate() {}\n"
+            "}\n";
+        asIScriptModule* module =
+            AngelScript::CompileModuleFromSource(m_engine, "Hello", source);
+        ASSERT_NE(module, nullptr);
+        EXPECT_NE(module->GetTypeInfoByDecl("Hello"), nullptr);
+    }
+
+    TEST_F(AngelScriptExecutionFixture, Compile_InvalidSourceReturnsNull)
+    {
+        const char* source = "class Broken { this is not valid angelscript }";
+        asIScriptModule* module =
+            AngelScript::CompileModuleFromSource(m_engine, "Broken", source);
+        EXPECT_EQ(module, nullptr);
     }
 }
