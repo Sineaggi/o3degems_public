@@ -24,6 +24,8 @@
 
 // AngelScript Headers
 #include <angelscript.h>
+#include <ScriptContextPool.h>
+#include <ScriptModuleCompiler.h>
 #include <AzCore/RTTI/ReflectionManager.h>
 #include <AzCore/Component/ComponentApplication.h>
 
@@ -208,6 +210,30 @@ namespace AngelScript
         return nullptr;
     }
 
+    asIScriptContext* AngelScriptSystemComponent::RequestContext()
+    {
+        return m_contextPool.Acquire();
+    }
+
+    void AngelScriptSystemComponent::ReturnContext(asIScriptContext* context)
+    {
+        m_contextPool.Release(context);
+    }
+
+    asIScriptModule* AngelScriptSystemComponent::EnsureModule(
+        const AZStd::string& moduleName, const AZStd::string& source)
+    {
+        if (!m_scriptEngine)
+        {
+            return nullptr;
+        }
+        if (asIScriptModule* existing = m_scriptEngine->GetModule(moduleName.c_str(), asGM_ONLY_IF_EXISTS))
+        {
+            return existing;
+        }
+        return CompileModuleFromSource(m_scriptEngine, moduleName.c_str(), source.c_str());
+    }
+
     bool AngelScriptSystemComponent::ExecuteString(const AZStd::string& /*scriptCode*/, const AZStd::string& /*moduleName*/)
     {
         if (!m_scriptEngine)
@@ -296,6 +322,7 @@ namespace AngelScript
         int r = m_scriptEngine->SetMessageCallback(asFUNCTION(MessageCallback), 0, asCALL_CDECL);
         AZ_Assert(r >= 0, "Failed to set AngelScript message callback.");
 
+        m_contextPool.Initialize(m_scriptEngine);
 
 #define AS_SET_ENGINE_PROPERTY(AS_EP_ENUM, SetRegPath) {\
             bool propertyValue = true; \
@@ -342,6 +369,7 @@ namespace AngelScript
         if (m_scriptEngine)
         {
             AZLOG_INFO("Shutting down AngelScript Engine...");
+            m_contextPool.Shutdown();
             m_scriptEngine->ShutDownAndRelease();
             m_scriptEngine = nullptr;
             AZLOG_INFO("AngelScript Engine Shutdown.");

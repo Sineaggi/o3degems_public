@@ -11,6 +11,7 @@
 #include <Builders/AngelScriptBuilderWorker.h>
 
 #include <angelscript.h>
+#include <ScriptContextPool.h>
 
 #include <AzFramework/Asset/AssetCatalogBus.h>
 
@@ -42,6 +43,7 @@ namespace AngelScript
 
         asIScriptEngine* m_scriptEngine = nullptr;
         asIScriptContext* m_scriptContext = nullptr;
+        ScriptContextPool m_contextPool;
 
     protected:
         ////////////////////////////////////////////////////////////////////////
@@ -66,6 +68,9 @@ namespace AngelScript
         asIScriptEngine* GetScriptEngine() override;
         asIScriptContext* CreateContext() override;
         asIScriptModule* GetModule(const AZStd::string& moduleName) override;
+        asIScriptContext* RequestContext() override;
+        void ReturnContext(asIScriptContext* context) override;
+        asIScriptModule* EnsureModule(const AZStd::string& moduleName, const AZStd::string& source) override;
         bool ExecuteString(const AZStd::string& scriptCode, const AZStd::string& moduleName) override;
         bool RegisterGlobalFunction(const char* declaration, const void* funcPointer) override;
         bool RegisterGlobalProperty(const char* declaration, void* propertyPtr) override;

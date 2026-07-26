@@ -34,6 +34,17 @@ namespace AngelScript
         /// @return A pointer to the asIScriptModule, or nullptr if not found.
         virtual asIScriptModule* GetModule(const AZStd::string& moduleName) = 0;
 
+        /// @brief Borrow an execution context from the pool (return it with ReturnContext).
+        virtual asIScriptContext* RequestContext() = 0;
+
+        /// @brief Return a context previously obtained from RequestContext.
+        virtual void ReturnContext(asIScriptContext* context) = 0;
+
+        /// @brief Get the module named moduleName, compiling it from source if absent.
+        /// @return The module, or nullptr on compile failure.
+        virtual asIScriptModule* EnsureModule(const AZStd::string& moduleName,
+                                              const AZStd::string& source) = 0;
+
         /// @brief Executes a string of AngelScript code.
         /// @param scriptCode The code to execute.
         /// @param moduleName The name of the module to execute the code in. If empty, a temporary module is used.
