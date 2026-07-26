@@ -8,7 +8,7 @@
 #include <AzCore/RTTI/BehaviorContext.h>
 //
 //// AngelScript Headers
-//#include <angelscript.h>
+#include <angelscript.h>
 //#include <scriptbuilder/scriptbuilder.h>
 
 
@@ -84,20 +84,20 @@ namespace AngelScript
         DestroyScriptObject();
     }
 
-    void AngelScriptComponent::OnTick(float /*deltaTime*/, AZ::ScriptTimePoint /*time*/)
+    void AngelScriptComponent::OnTick(float deltaTime, AZ::ScriptTimePoint /*time*/)
     {
         if (m_scriptObject && m_onTickFunction)
         {
-            //asIScriptContext* ctx = nullptr;
-            //AngelScriptRequestBus::BroadcastResult(ctx, &AngelScriptRequestBus::Events::RequestContext);
-            //if (ctx)
-            //{
-            //    ctx->Prepare(m_onTickFunction);
-            //    ctx->SetObject(m_scriptObject);
-            //    ctx->SetArgFloat(0, deltaTime);
-            //    ctx->Execute();
-            //    AngelScriptRequestBus::Broadcast(&AngelScriptRequestBus::Events::ReturnContext, ctx);
-            //}
+            asIScriptContext* ctx = nullptr;
+            AngelScriptRequestBus::BroadcastResult(ctx, &AngelScriptRequestBus::Events::RequestContext);
+            if (ctx)
+            {
+                ctx->Prepare(m_onTickFunction);
+                ctx->SetObject(m_scriptObject);
+                ctx->SetArgFloat(0, deltaTime);
+                ctx->Execute();
+                AngelScriptRequestBus::Broadcast(&AngelScriptRequestBus::Events::ReturnContext, ctx);
+            }
         }
     }
 
@@ -122,23 +122,22 @@ namespace AngelScript
             return;
         }
 
-        asIScriptEngine* engine = nullptr;
-        AngelScriptRequestBus::BroadcastResult(engine, &AngelScriptRequestBus::Events::GetScriptEngine);
-        if (!engine)
-        {
-            AZ_Error("AngelScript", false, "Cannot create script object for entity %s, AngelScript engine not available.", GetEntityId().ToString().c_str());
-            return;
-        }
+        // Compile (or fetch) the module from the asset's stored source.
+        const AZStd::vector<char>& scriptBuffer = m_scriptAsset.Get()->m_scriptData.m_script;
+        const AZStd::string source(scriptBuffer.data(), scriptBuffer.size());
+        const AZStd::string& moduleName = m_scriptAsset.Get()->m_moduleName;
 
-        asIScriptModule* module = engine->GetModule(m_scriptAsset.Get()->m_moduleName.c_str());
+        asIScriptModule* module = nullptr;
+        AngelScriptRequestBus::BroadcastResult(module, &AngelScriptRequestBus::Events::EnsureModule, moduleName, source);
         if (!module)
         {
-            AZ_Error("AngelScript", false, "Module '%s' not found for asset %s", m_scriptAsset.Get()->m_moduleName.c_str(), m_scriptAsset.GetId().ToString<AZStd::string>().c_str());
+            AZ_Error("AngelScript", false, "Failed to compile module '%s' for entity %s",
+                moduleName.c_str(), GetEntityId().ToString().c_str());
             return;
         }
 
-        // Convention: The class name inside the script must match the module name (filename without extension).
-        AZStd::string className = m_scriptAsset.Get()->m_moduleName;
+        // Convention: class name == module name == filename stem.
+        AZStd::string className = moduleName;
         AZStd::string::size_type dotPos = className.rfind('.');
         if (dotPos != AZStd::string::npos)
         {
@@ -148,15 +147,18 @@ namespace AngelScript
         asITypeInfo* type = module->GetTypeInfoByDecl(className.c_str());
         if (!type)
         {
-            AZ_Error("AngelScript", false, "Class '%s' not found in module '%s'. The class name must match the filename.", className.c_str(), module->GetName());
+            AZ_Error("AngelScript", false, "Class '%s' not found in module '%s'.", className.c_str(), module->GetName());
             return;
         }
 
-        // Create the object instance.
+        // Instantiate via the type's factory.
         asIScriptContext* ctx = nullptr;
-        //TODO-LS: implement ReturnContext
-        // AngelScriptRequestBus::BroadcastResult(ctx, &AngelScriptRequestBus::Events::RequestContext);
-        if (!ctx) return;
+        AngelScriptRequestBus::BroadcastResult(ctx, &AngelScriptRequestBus::Events::RequestContext);
+        if (!ctx)
+        {
+            AZ_Error("AngelScript", false, "No script context available to instantiate '%s'.", className.c_str());
+            return;
+        }
 
         ctx->Prepare(type->GetFactoryByIndex(0));
         if (ctx->Execute() == asEXECUTION_FINISHED)
@@ -164,8 +166,7 @@ namespace AngelScript
             m_scriptObject = *static_cast<asIScriptObject**>(ctx->GetAddressOfReturnValue());
             m_scriptObject->AddRef();
         }
-        //TODO-LS: implement ReturnContext
-        ///AngelScriptRequestBus::Broadcast(&AngelScriptRequestBus::Events::ReturnContext, ctx);
+        AngelScriptRequestBus::Broadcast(&AngelScriptRequestBus::Events::ReturnContext, ctx);
 
         if (!m_scriptObject)
         {
@@ -173,27 +174,24 @@ namespace AngelScript
             return;
         }
 
-        // Cache function pointers for lifecycle methods.
+        // Cache lifecycle methods.
         m_onCreateFunction = type->GetMethodByDecl("void OnCreate()");
         m_onDestroyFunction = type->GetMethodByDecl("void OnDestroy()");
         m_onTickFunction = type->GetMethodByDecl("void OnTick(float)");
 
-        // Call OnCreate if it exists.
         if (m_onCreateFunction)
         {
-            //TODO-LS: implement ReturnContext
-            ///AngelScriptRequestBus::BroadcastResult(ctx, &AngelScriptRequestBus::Events::RequestContext);
-            if (ctx)
+            asIScriptContext* createCtx = nullptr;
+            AngelScriptRequestBus::BroadcastResult(createCtx, &AngelScriptRequestBus::Events::RequestContext);
+            if (createCtx)
             {
-                ctx->Prepare(m_onCreateFunction);
-                ctx->SetObject(m_scriptObject);
-                ctx->Execute();
-                //TODO-LS: implement ReturnContext
-                // AngelScriptRequestBus::Broadcast(&AngelScriptRequestBus::Events::ReturnContext, ctx);
+                createCtx->Prepare(m_onCreateFunction);
+                createCtx->SetObject(m_scriptObject);
+                createCtx->Execute();
+                AngelScriptRequestBus::Broadcast(&AngelScriptRequestBus::Events::ReturnContext, createCtx);
             }
         }
 
-        // If an OnTick function exists, connect to the TickBus.
         if (m_onTickFunction)
         {
             AZ::TickBus::Handler::BusConnect();
@@ -208,15 +206,13 @@ namespace AngelScript
             if (m_onDestroyFunction)
             {
                 asIScriptContext* ctx = nullptr;
-                //TODO-LS: implement ReturnContext
-                //AngelScriptRequestBus::BroadcastResult(ctx, &AngelScriptRequestBus::Events::RequestContext);
+                AngelScriptRequestBus::BroadcastResult(ctx, &AngelScriptRequestBus::Events::RequestContext);
                 if (ctx)
                 {
                     ctx->Prepare(m_onDestroyFunction);
                     ctx->SetObject(m_scriptObject);
                     ctx->Execute();
-                    //TODO-LS: implement ReturnContext
-                    // AngelScriptRequestBus::Broadcast(&AngelScriptRequestBus::Events::ReturnContext, ctx);
+                    AngelScriptRequestBus::Broadcast(&AngelScriptRequestBus::Events::ReturnContext, ctx);
                 }
             }
             m_scriptObject->Release();
