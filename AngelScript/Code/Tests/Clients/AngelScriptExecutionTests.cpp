@@ -74,4 +74,69 @@ namespace AngelScriptTests
             AngelScript::CompileModuleFromSource(m_engine, "Broken", source);
         EXPECT_EQ(module, nullptr);
     }
+
+    namespace
+    {
+        int s_recordCallCount = 0;
+        void RecordCall() { ++s_recordCallCount; }
+    }
+
+    TEST_F(AngelScriptExecutionFixture, ExecutionCore_InstantiateAndRunLifecycle)
+    {
+        s_recordCallCount = 0;
+
+        // Native function the script can call to record an observable side-effect.
+        ASSERT_GE(m_engine->RegisterGlobalFunction(
+            "void RecordCall()", asFUNCTION(RecordCall), asCALL_CDECL), 0);
+
+        const char* source =
+            "class Hello {\n"
+            "  void OnCreate() { RecordCall(); }\n"
+            "  void OnTick(float dt) { RecordCall(); }\n"
+            "}\n";
+
+        asIScriptModule* module =
+            AngelScript::CompileModuleFromSource(m_engine, "Hello", source);
+        ASSERT_NE(module, nullptr);
+
+        asITypeInfo* type = module->GetTypeInfoByDecl("Hello");
+        ASSERT_NE(type, nullptr);
+
+        AngelScript::ScriptContextPool pool;
+        pool.Initialize(m_engine);
+
+        // Instantiate via the type's factory.
+        asIScriptContext* ctx = pool.Acquire();
+        ASSERT_NE(ctx, nullptr);
+        ASSERT_GE(ctx->Prepare(type->GetFactoryByIndex(0)), 0);
+        ASSERT_EQ(ctx->Execute(), asEXECUTION_FINISHED);
+        asIScriptObject* obj = *static_cast<asIScriptObject**>(ctx->GetAddressOfReturnValue());
+        ASSERT_NE(obj, nullptr);
+        obj->AddRef();
+        pool.Release(ctx);
+
+        // Call OnCreate().
+        asIScriptFunction* onCreate = type->GetMethodByDecl("void OnCreate()");
+        ASSERT_NE(onCreate, nullptr);
+        ctx = pool.Acquire();
+        ctx->Prepare(onCreate);
+        ctx->SetObject(obj);
+        ASSERT_EQ(ctx->Execute(), asEXECUTION_FINISHED);
+        pool.Release(ctx);
+
+        // Call OnTick(0.016).
+        asIScriptFunction* onTick = type->GetMethodByDecl("void OnTick(float)");
+        ASSERT_NE(onTick, nullptr);
+        ctx = pool.Acquire();
+        ctx->Prepare(onTick);
+        ctx->SetObject(obj);
+        ctx->SetArgFloat(0, 0.016f);
+        ASSERT_EQ(ctx->Execute(), asEXECUTION_FINISHED);
+        pool.Release(ctx);
+
+        obj->Release();
+        pool.Shutdown();
+
+        EXPECT_EQ(s_recordCallCount, 2); // OnCreate + OnTick
+    }
 }
