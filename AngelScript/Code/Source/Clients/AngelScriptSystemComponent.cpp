@@ -83,13 +83,11 @@ namespace AngelScript
 
     AngelScriptSystemComponent::~AngelScriptSystemComponent()
     {
-        // Deactivate() normally shuts the engine down (nulling m_scriptEngine). Guard here so the
-        // destructor is safe whether or not Deactivate() ran, and avoid a double ShutDownAndRelease().
-        if (m_scriptEngine)
-        {
-            m_scriptEngine->ShutDownAndRelease();
-            m_scriptEngine = nullptr;
-        }
+        // Deactivate() normally shuts the engine down (nulling m_scriptEngine). Route through
+        // ShutdownAngelScriptEngine() here so the destructor is safe whether or not Deactivate() ran:
+        // it releases pooled contexts before releasing the engine (avoiding a dangling-context release
+        // against an already-destroyed engine), and no-ops safely if the engine is already null.
+        ShutdownAngelScriptEngine();
 
         if (AngelScriptInterface::Get() == this)
         {
