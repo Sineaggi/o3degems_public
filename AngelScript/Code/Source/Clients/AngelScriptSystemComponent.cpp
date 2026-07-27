@@ -238,17 +238,11 @@ namespace AngelScript
     }
 
     asIScriptModule* AngelScriptSystemComponent::EnsureModule(
-        const AZStd::string& moduleName, const AZStd::string& source)
+        const AZStd::string& moduleName, const AZStd::string& source,
+        const AZStd::string& sectionName, bool forceRecompile)
     {
-        if (!m_scriptEngine)
-        {
-            return nullptr;
-        }
-        if (asIScriptModule* existing = m_scriptEngine->GetModule(moduleName.c_str(), asGM_ONLY_IF_EXISTS))
-        {
-            return existing;
-        }
-        return CompileModuleFromSource(m_scriptEngine, moduleName.c_str(), source.c_str());
+        return AngelScript::EnsureModule(
+            m_scriptEngine, moduleName.c_str(), source.c_str(), sectionName.c_str(), forceRecompile);
     }
 
     bool AngelScriptSystemComponent::ExecuteString(const AZStd::string& /*scriptCode*/, const AZStd::string& /*moduleName*/)

@@ -70,7 +70,8 @@ namespace AngelScript
         asIScriptModule* GetModule(const AZStd::string& moduleName) override;
         asIScriptContext* RequestContext() override;
         void ReturnContext(asIScriptContext* context) override;
-        asIScriptModule* EnsureModule(const AZStd::string& moduleName, const AZStd::string& source) override;
+        asIScriptModule* EnsureModule(const AZStd::string& moduleName, const AZStd::string& source,
+                                      const AZStd::string& sectionName, bool forceRecompile) override;
         bool ExecuteString(const AZStd::string& scriptCode, const AZStd::string& moduleName) override;
         bool RegisterGlobalFunction(const char* declaration, const void* funcPointer) override;
         bool RegisterGlobalProperty(const char* declaration, void* propertyPtr) override;

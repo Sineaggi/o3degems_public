@@ -61,7 +61,9 @@ namespace AngelScript
 
     private:
         /// @brief Creates the script object instance from the loaded asset.
-        void CreateScriptObject();
+        /// @param forceRecompile When true (asset reload), rebuild the module from the new source
+        ///        instead of reusing the already-compiled one.
+        void CreateScriptObject(bool forceRecompile);
 
         /// @brief Releases the script object and associated resources.
         void DestroyScriptObject();

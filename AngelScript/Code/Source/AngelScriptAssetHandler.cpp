@@ -173,8 +173,13 @@ namespace AngelScript
             AngelScriptRequestBus::BroadcastResult(engine, &AngelScriptRequestBus::Events::GetScriptEngine);
             if (engine)
             {
-                engine->DiscardModule(scriptAsset->m_moduleName.c_str());
-                AZLOG_INFO("Discarded module '%s' on asset destruction.", scriptAsset->m_moduleName.c_str());
+                // Discard the module keyed on this asset's AssetId -- the same key
+                // AngelScriptComponent compiles under -- so unloading one script doesn't
+                // discard a module another script (e.g. one sharing its filename stem) is using.
+                const AZStd::string moduleKey = scriptAsset->GetId().ToString<AZStd::string>();
+                engine->DiscardModule(moduleKey.c_str());
+                AZLOG_INFO("Discarded AngelScript module for '%s' on asset destruction.",
+                    scriptAsset->m_scriptData.m_debugName.c_str());
             }
         }
         delete ptr;

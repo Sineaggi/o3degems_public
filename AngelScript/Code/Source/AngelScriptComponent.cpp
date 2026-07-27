@@ -108,16 +108,18 @@ namespace AngelScript
     void AngelScriptComponent::OnAssetReady(AZ::Data::Asset<AZ::Data::AssetData> asset)
     {
         m_scriptAsset = asset;
-        CreateScriptObject();
+        CreateScriptObject(false);
     }
 
     void AngelScriptComponent::OnAssetReloaded(AZ::Data::Asset<AZ::Data::AssetData> asset)
     {
-        // Re-create the script object with the new version of the script.
-        OnAssetReady(asset);
+        // Reload: rebuild the module from the new source. The module key (the AssetId) is stable
+        // across reloads, so we must force a recompile rather than reuse the cached module.
+        m_scriptAsset = asset;
+        CreateScriptObject(true);
     }
 
-    void AngelScriptComponent::CreateScriptObject()
+    void AngelScriptComponent::CreateScriptObject(bool forceRecompile)
     {
         DestroyScriptObject(); // Clean up any existing object first.
 
@@ -126,32 +128,39 @@ namespace AngelScript
             return;
         }
 
-        // Compile (or fetch) the module from the asset's stored source.
-        const AZStd::vector<char>& scriptBuffer = m_scriptAsset.Get()->m_scriptData.m_script;
+        // Key the engine module on the asset's AssetId -- unique and stable, so two scripts that
+        // share a class name (same filename stem in different folders) don't collide into one
+        // module. The class name is the filename stem (the authoring convention); the readable
+        // source path is passed as the section name so compiler diagnostics stay legible.
+        const AngelScriptAsset* scriptAsset = m_scriptAsset.Get();
+        const AZStd::vector<char>& scriptBuffer = scriptAsset->m_scriptData.m_script;
         const AZStd::string source(scriptBuffer.data(), scriptBuffer.size());
-        const AZStd::string& moduleName = m_scriptAsset.Get()->m_moduleName;
+        const AZStd::string moduleKey = m_scriptAsset.GetId().ToString<AZStd::string>();
 
-        asIScriptModule* module = nullptr;
-        AngelScriptRequestBus::BroadcastResult(module, &AngelScriptRequestBus::Events::EnsureModule, moduleName, source);
-        if (!module)
-        {
-            AZ_Error("AngelScript", false, "Failed to compile module '%s' for entity %s",
-                moduleName.c_str(), GetEntityId().ToString().c_str());
-            return;
-        }
-
-        // Convention: class name == module name == filename stem.
-        AZStd::string className = moduleName;
+        AZStd::string className = scriptAsset->m_moduleName;
         AZStd::string::size_type dotPos = className.rfind('.');
         if (dotPos != AZStd::string::npos)
         {
             className = className.substr(0, dotPos);
         }
 
+        const AZStd::string& sectionName =
+            scriptAsset->m_scriptData.m_debugName.empty() ? className : scriptAsset->m_scriptData.m_debugName;
+
+        asIScriptModule* module = nullptr;
+        AngelScriptRequestBus::BroadcastResult(
+            module, &AngelScriptRequestBus::Events::EnsureModule, moduleKey, source, sectionName, forceRecompile);
+        if (!module)
+        {
+            AZ_Error("AngelScript", false, "Failed to compile script '%s' for entity %s",
+                sectionName.c_str(), GetEntityId().ToString().c_str());
+            return;
+        }
+
         asITypeInfo* type = module->GetTypeInfoByDecl(className.c_str());
         if (!type)
         {
-            AZ_Error("AngelScript", false, "Class '%s' not found in module '%s'.", className.c_str(), module->GetName());
+            AZ_Error("AngelScript", false, "Class '%s' not found in script '%s'.", className.c_str(), sectionName.c_str());
             return;
         }
 

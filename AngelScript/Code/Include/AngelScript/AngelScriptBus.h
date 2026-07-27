@@ -41,9 +41,16 @@ namespace AngelScript
         virtual void ReturnContext(asIScriptContext* context) = 0;
 
         /// @brief Get the module named moduleName, compiling it from source if absent.
+        /// @param moduleName Unique, stable module key (the caller uses the script's AssetId).
+        /// @param source The AngelScript source to compile.
+        /// @param sectionName Human-readable name for compiler diagnostics (e.g. the source path).
+        /// @param forceRecompile When true, always rebuild from source (used for hot reload, since
+        ///        the module key is stable across reloads and would otherwise return a stale module).
         /// @return The module, or nullptr on compile failure.
         virtual asIScriptModule* EnsureModule(const AZStd::string& moduleName,
-                                              const AZStd::string& source) = 0;
+                                              const AZStd::string& source,
+                                              const AZStd::string& sectionName,
+                                              bool forceRecompile) = 0;
 
         /// @brief Executes a string of AngelScript code.
         /// @param scriptCode The code to execute.

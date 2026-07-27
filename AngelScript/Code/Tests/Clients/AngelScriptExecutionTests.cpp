@@ -139,4 +139,56 @@ namespace AngelScriptTests
 
         EXPECT_EQ(s_recordCallCount, 2); // OnCreate + OnTick
     }
+
+    // --- Issue 1: module identity (unique key, decoupled class name, reload) ---
+
+    // Two scripts that share a class name (e.g. two "Hello" classes from different files)
+    // must live in separate engine modules keyed independently, and discarding one must not
+    // affect the other. Under the old filename-stem keying these collided into one module.
+    TEST_F(AngelScriptExecutionFixture, Compile_DistinctModuleKeysSameClassCoexist)
+    {
+        const char* src = "class Hello { }";
+        asIScriptModule* a = AngelScript::CompileModuleFromSource(m_engine, "keyA", src, "a.as");
+        asIScriptModule* b = AngelScript::CompileModuleFromSource(m_engine, "keyB", src, "b.as");
+        ASSERT_NE(a, nullptr);
+        ASSERT_NE(b, nullptr);
+        EXPECT_NE(a, b);
+        EXPECT_NE(a->GetTypeInfoByDecl("Hello"), nullptr);
+        EXPECT_NE(b->GetTypeInfoByDecl("Hello"), nullptr);
+
+        // Discarding one module leaves the sibling intact.
+        m_engine->DiscardModule("keyA");
+        EXPECT_EQ(m_engine->GetModule("keyA", asGM_ONLY_IF_EXISTS), nullptr);
+        EXPECT_NE(m_engine->GetModule("keyB", asGM_ONLY_IF_EXISTS), nullptr);
+    }
+
+    // Without forceRecompile, EnsureModule returns the already-compiled module untouched
+    // (the second source is ignored) -- this is the fast path for an already-loaded script.
+    TEST_F(AngelScriptExecutionFixture, EnsureModule_IdempotentWithoutForce)
+    {
+        asIScriptModule* first =
+            AngelScript::EnsureModule(m_engine, "key", "class Foo { }", "foo.as", false);
+        ASSERT_NE(first, nullptr);
+
+        asIScriptModule* second =
+            AngelScript::EnsureModule(m_engine, "key", "class Bar { }", "bar.as", false);
+        EXPECT_EQ(first, second);                                 // same module handed back
+        EXPECT_NE(second->GetTypeInfoByDecl("Foo"), nullptr);     // original content kept
+        EXPECT_EQ(second->GetTypeInfoByDecl("Bar"), nullptr);     // second source NOT compiled
+    }
+
+    // With forceRecompile (the reload path), EnsureModule rebuilds the module from the new
+    // source, replacing the old definition.
+    TEST_F(AngelScriptExecutionFixture, EnsureModule_ForceRecompilesReplacesContent)
+    {
+        asIScriptModule* first =
+            AngelScript::EnsureModule(m_engine, "key", "class Foo { }", "foo.as", false);
+        ASSERT_NE(first, nullptr);
+
+        asIScriptModule* rebuilt =
+            AngelScript::EnsureModule(m_engine, "key", "class Bar { }", "bar.as", true);
+        ASSERT_NE(rebuilt, nullptr);
+        EXPECT_NE(rebuilt->GetTypeInfoByDecl("Bar"), nullptr);    // new source compiled
+        EXPECT_EQ(rebuilt->GetTypeInfoByDecl("Foo"), nullptr);    // old definition gone
+    }
 }
