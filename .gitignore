@@ -40,4 +40,6 @@
 # debug information files
 *.dwo
 
-AngelScript/External/angelscript_2.37.0/sdk/angelscript/projects
+# Vendored AngelScript SDK build intermediates (keep the .sln/.vcxproj source; drop obj/tlog/recipe/etc.)
+AngelScript/External/angelscript_2.38.0/sdk/angelscript/projects/msvc2022/angelscript/
+*.recipe
