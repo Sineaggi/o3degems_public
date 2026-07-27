@@ -43,6 +43,7 @@ namespace AngelScript
 
         asIScriptEngine* m_scriptEngine = nullptr;
         ScriptContextPool m_contextPool;
+        bool m_versionLogged = false; // one-shot guard for the first-tick library-version log
 
     protected:
         ////////////////////////////////////////////////////////////////////////

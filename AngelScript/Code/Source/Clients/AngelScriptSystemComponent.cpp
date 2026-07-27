@@ -161,6 +161,16 @@ namespace AngelScript
 
     void AngelScriptSystemComponent::OnTick([[maybe_unused]] float deltaTime, [[maybe_unused]] AZ::ScriptTimePoint time)
     {
+        // Log the runtime library version once, on the first tick. Logging done during
+        // Activate()/InitializeAngelScriptEngine() is dropped -- the Editor's log sink isn't
+        // attached until after gem system components activate. By the first tick the app is fully
+        // up and trace output reaches Editor.log. asGetLibraryVersion() reports the actually-linked
+        // SDK version (validates the vendored 2.38.0 upgrade at runtime).
+        if (!m_versionLogged && m_scriptEngine)
+        {
+            m_versionLogged = true;
+            AZ_TracePrintf("AngelScript", "AngelScript library version: %s", asGetLibraryVersion());
+        }
     }
 
     // A simple message callback function for AngelScript to route messages to the O3DE logger.
@@ -325,11 +335,8 @@ namespace AngelScript
             return;
         }
 
-        // Log the runtime library version -- validates which vendored SDK is actually linked.
-        // Use AZ_TracePrintf, not AZLOG_INFO: at system-component activation the AZ::ILogger
-        // interface isn't wired up yet, so AZLOG_* macros silently no-op this early. The
-        // AZ::Debug::Trace system (AZ_TracePrintf) is available from early bootstrap and reaches Editor.log.
-        AZ_TracePrintf("AngelScript", "AngelScript library version: %s", asGetLibraryVersion());
+        // (Runtime library version is logged on the first OnTick -- logging this early, during
+        // system-component activation, is dropped because the Editor's log sink isn't attached yet.)
 
         // Set the message callback to receive information on errors in scripts.
         int r = m_scriptEngine->SetMessageCallback(asFUNCTION(MessageCallback), 0, asCALL_CDECL);
