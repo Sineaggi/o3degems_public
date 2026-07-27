@@ -325,6 +325,9 @@ namespace AngelScript
             return;
         }
 
+        // Log the runtime library version -- validates which vendored SDK is actually linked.
+        AZLOG_INFO("AngelScript library version: %s", asGetLibraryVersion());
+
         // Set the message callback to receive information on errors in scripts.
         int r = m_scriptEngine->SetMessageCallback(asFUNCTION(MessageCallback), 0, asCALL_CDECL);
         AZ_Assert(r >= 0, "Failed to set AngelScript message callback.");
