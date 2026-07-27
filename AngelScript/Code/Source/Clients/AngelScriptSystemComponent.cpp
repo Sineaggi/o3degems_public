@@ -326,7 +326,10 @@ namespace AngelScript
         }
 
         // Log the runtime library version -- validates which vendored SDK is actually linked.
-        AZLOG_INFO("AngelScript library version: %s", asGetLibraryVersion());
+        // Use AZ_TracePrintf, not AZLOG_INFO: at system-component activation the AZ::ILogger
+        // interface isn't wired up yet, so AZLOG_* macros silently no-op this early. The
+        // AZ::Debug::Trace system (AZ_TracePrintf) is available from early bootstrap and reaches Editor.log.
+        AZ_TracePrintf("AngelScript", "AngelScript library version: %s", asGetLibraryVersion());
 
         // Set the message callback to receive information on errors in scripts.
         int r = m_scriptEngine->SetMessageCallback(asFUNCTION(MessageCallback), 0, asCALL_CDECL);
