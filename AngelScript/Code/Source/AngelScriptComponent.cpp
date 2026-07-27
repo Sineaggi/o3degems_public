@@ -52,10 +52,14 @@ namespace AngelScript
         // would prevent this component from coexisting with the system component that provides it.
     }
 
-    void AngelScriptComponent::GetRequiredServices(AZ::ComponentDescriptor::DependencyArrayType& required)
+    void AngelScriptComponent::GetRequiredServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& required)
     {
-        // This component requires the main system component (which provides AngelScriptService) to be active.
-        required.push_back(AZ_CRC_CE("AngelScriptService"));
+        // Intentionally empty. AngelScriptService is a SYSTEM-level service provided by
+        // AngelScriptSystemComponent (a required system component). An entity component's required
+        // services are resolved only against other components on the SAME entity, never against
+        // system components -- so requiring it here would disable this component on every normal
+        // entity ("missing a required component service"). The script system is reached at runtime
+        // via AngelScriptRequestBus, which the system component services, so no dependency is needed.
     }
 
     void AngelScriptComponent::GetDependentServices(AZ::ComponentDescriptor::DependencyArrayType& /*dependent*/)
